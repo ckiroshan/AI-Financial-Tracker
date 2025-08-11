@@ -1,15 +1,15 @@
+import { Route, Routes } from "react-router";
 import "./App.css";
-import { Button } from "./components/ui/button";
+import RootLayout from "./components/layouts/root-layout.page";
 
 function App() {
   return (
     <>
-      <div className="container">
-        <h1 className="text-red-700">This site is working perfectly 😉!</h1>
-        <Button variant="default" className="text-lg px-8 py-3 shadow-lg bg-amber-300">
-          Get Started
-        </Button>
-      </div>
+      <Routes>
+        <Route path="/" element={<RootLayout />}>
+          
+        </Route>
+      </Routes>
     </>
   );
 }
