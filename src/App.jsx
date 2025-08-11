@@ -1,11 +1,15 @@
+import { Route, Routes } from "react-router";
 import "./App.css";
+import RootLayout from "./components/layouts/root-layout.page";
 
 function App() {
   return (
     <>
-      <div className="container">
-        <h1>This site is working perfectly 😉!</h1>
-      </div>
+      <Routes>
+        <Route path="/" element={<RootLayout />}>
+          
+        </Route>
+      </Routes>
     </>
   );
 }
