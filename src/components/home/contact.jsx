@@ -25,7 +25,7 @@ const contact = () => {
                                 <Label htmlFor="email" className="font-sans font-semibold">
                                     Email
                                 </Label>
-                                <Input id="email" type="email" placeholder="jonedoe@gmail.com" className="mt-2" />
+                                <Input id="email" type="email" placeholder="johndoe@gmail.com" className="mt-2" />
                             </div>
                             <div>
                                 <Label htmlFor="message" className="font-sans font-semibold">
