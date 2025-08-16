@@ -1,5 +1,4 @@
-
-import { Outlet } from "react-router";
+import { Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import Header from "../Header";
 
