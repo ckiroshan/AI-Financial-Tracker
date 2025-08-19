@@ -22,36 +22,21 @@ const Header = () => {
         <NavigationMenu className="hidden lg:flex">
           <NavigationMenuList>
             <SignedOut>
-              {/* Show only Home link for logged out users */}
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link to="/" className={navigationMenuTriggerStyle()}>
-                    Home
-                  </Link>
+                  <Link to="/" className={navigationMenuTriggerStyle()}>Home</Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link to={{ pathname: "/", hash: "#about" }} className={navigationMenuTriggerStyle()}>
-                    About Us
-                  </Link>
+                  <Link to={{ pathname: "/", hash: "#about" }} className={navigationMenuTriggerStyle()}>About Us</Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
             </SignedOut>
-            <SignedIn>
-              {/* Show only Dashboard link for logged in users */}
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link to="/user/dashboard" className={navigationMenuTriggerStyle()}>
-                    Dashboard
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </SignedIn>
           </NavigationMenuList>
         </NavigationMenu>
 
-        {/* User Authentication Buttons/Widget for Desktop */}
+        {/* Login / Sign-up / User-account Buttons for Desktop */}
         <div className="ml-auto hidden lg:flex items-center gap-2">
           <SignedOut>
             <Button variant="outline" asChild>
@@ -68,45 +53,34 @@ const Header = () => {
 
         {/* Mobile Navigation (Hamburger Menu) - (hidden on desktop) */}
         <div className="flex items-center lg:hidden">
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Open menu">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[250px] sm:w-[300px] flex flex-col">
-              <SheetHeader>
-                <SheetTitle className="text-left">Menu</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col space-y-2 overflow-y-auto flex-grow">
-                <SignedOut>
-                  <Link to="/" className="px-4 py-2 md:text-lg font-medium text-foreground hover:bg-accent rounded-md" onClick={closeSheet}>
-                    Home
-                  </Link>
-                  <Link to={{ pathname: "/", hash: "#about" }} className="px-4 py-2 md:text-lg font-medium text-foreground hover:bg-accent rounded-md" onClick={closeSheet}>
-                    About Us
-                  </Link>
-                </SignedOut>
-                <SignedIn>
-                  <Link to="/user/dashboard" className="px-4 py-2 md:text-lg font-medium text-foreground hover:bg-accent rounded-md" onClick={closeSheet}>
-                    Dashboard
-                  </Link>
-                </SignedIn>
+          <SignedOut>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Open menu">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[250px] sm:w-[300px] flex flex-col">
+                <SheetHeader>
+                  <SheetTitle className="text-left">Menu</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col space-y-2 overflow-y-auto flex-grow">
+                  <Link to="/" className="px-4 py-2 md:text-lg font-medium text-foreground hover:bg-accent rounded-md" onClick={closeSheet}>Home</Link>
+                  <Link to={{ pathname: "/", hash: "#about" }} className="px-4 py-2 md:text-lg font-medium text-foreground hover:bg-accent rounded-md" onClick={closeSheet}>About Us</Link>
 
-                {/* User Authentication Buttons/Widget for Mobile */}
-                <div className="flex flex-col gap-2 mt-6 px-4">
-                  <SignedOut>
+                  {/* Login / Sign-up Buttons for Mobile */}
+                  <div className="flex flex-col gap-2 mt-6 px-4">
                     <Button variant="outline" asChild onClick={closeSheet}>
                       <Link to="/login">Sign In</Link>
                     </Button>
                     <Button asChild onClick={closeSheet}>
                       <Link to="/register">Sign Up</Link>
                     </Button>
-                  </SignedOut>
-                </div>
-              </nav>
-            </SheetContent>
-          </Sheet>
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </SignedOut>
           <SignedIn>
             <UserButton />
           </SignedIn>
