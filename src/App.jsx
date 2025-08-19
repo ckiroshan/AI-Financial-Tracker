@@ -7,6 +7,10 @@ import SignInPage from "./pages/sign-in.page";
 import SignUpPage from "./pages/sign-up.page";
 import ProtectLayout from "./components/layouts/protect.layout";
 import { useUser } from "@clerk/clerk-react";
+import AuthenticatedLayout from "./components/layouts/authenticated-layout.page";
+import TransactionsPage from "./pages/transaction.page";
+import BudgetPage from "./pages/budget.page";
+import NotificationsPage from "./pages/notifications.page";
 
 const IndexRouteComponent = () => {
   // Check if user is loaded & signed in
@@ -29,7 +33,12 @@ function App() {
           <Route path="register" element={<SignUpPage />} />
           {/* Protected Routes */}
           <Route element={<ProtectLayout />}>
-            <Route path="/user/dashboard" element={<Dashboard />} />
+            <Route element={<AuthenticatedLayout />}>
+              <Route path="/user/dashboard" element={<Dashboard />} />
+              <Route path="/user/transactions" element={<TransactionsPage />} />
+              <Route path="/user/budget" element={<BudgetPage />} />
+              <Route path="/user/notifications" element={<NotificationsPage />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

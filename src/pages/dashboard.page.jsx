@@ -1,7 +1,11 @@
 const Dashboard = () => {
   return (
-    <div className="rounded-lg mx-2 md:mx-20 lg:mx-30 my-2 py-4 px-8 bg-primary-foreground">
-      <h1 className="font-bold text-xl">This is the User Dashboard</h1>
+    <div className="rounded-lg mx-2 md:mx-20 lg:mx-30 my-2 py-4 lg:px-8">
+      {/* Header */}
+      <div className="px-6 py-4 text-center">
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <p className="text-gray-600 text-lg mt-1">Welcome to your financial overview</p>
+      </div>
     </div>
   );
 };
