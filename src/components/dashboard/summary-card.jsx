@@ -1,9 +1,18 @@
-import { ChartNoAxesCombined, Download, PieChart, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import React from "react";
+import { CalendarIcon, ChartNoAxesCombined, Download, PieChart, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import React, { useState } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Calendar } from "../ui/calendar";
 
 const SummaryCard = () => {
+  const [date, setDate] = useState({
+    from: new Date(),
+    to: new Date(),
+  });
+
   return (
     <div className="px-2 md:px-0 lg:py-0 pt-3 lg:mb-10">
       <div className="flex items-stretch justify-between mb-3 lg:mb-2">
@@ -11,10 +20,49 @@ const SummaryCard = () => {
           <span className="text-xl md:text-2xl lg:text-3xl text-gray-800">Stats</span>
           <ChartNoAxesCombined className="text-white bg-amber-300 rounded-md p-1 mb-2 size-7 lg:size-9 " />
         </div>
-        <Button className="md:text-base text-background px-4">
-          <Download />
-          Report
-        </Button>
+        {/* Date Picker and Report Button Container */}
+        <div className="flex items-center space-x-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="date"
+                variant={"outline"}
+                className={cn(
+                  "w-[170px] justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4 text-primary border-primary" />
+                {date?.from ? (
+                  date.to ? (
+                    <>
+                      {format(date.from, "LLL dd")} -{" "}
+                      {format(date.to, "LLL dd")}
+                    </>
+                  ) : (
+                    format(date.from, "LLL dd")
+                  )
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={date?.from}
+                selected={date}
+                onSelect={setDate}
+                numberOfMonths={1}
+              />
+            </PopoverContent>
+          </Popover>
+          <Button className="md:text-base text-background px-4">
+            <Download />
+            Report
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Income */}
