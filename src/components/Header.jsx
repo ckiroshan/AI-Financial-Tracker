@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Link } from "react-router-dom";
-import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, UserButton, useUser } from "@clerk/clerk-react";
 
 const Header = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const closeSheet = () => setIsSheetOpen(false);
+  const { user } = useUser(); // Provides access to current user's User object
 
   return (
     <header className="sticky top-0 z-50 border-2 shadow-sm rounded-full mx-2 md:mx-20 lg:mx-30 my-2 bg-background">
@@ -47,6 +48,7 @@ const Header = () => {
             </Button>
           </SignedOut>
           <SignedIn>
+            <span className="text-lg text-gray-700">Hi, {user?.fullName}</span>
             <UserButton />
           </SignedIn>
         </div>
@@ -82,6 +84,7 @@ const Header = () => {
             </Sheet>
           </SignedOut>
           <SignedIn>
+            <span className="text-gray-700 md:text-lg mr-2">Hi, {user?.firstName}</span>
             <UserButton />
           </SignedIn>
         </div>
