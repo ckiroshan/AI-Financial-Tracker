@@ -1,4 +1,5 @@
 import SummaryCard from "./../components/dashboard/summary-card.jsx";
+import Chart from "./../components/dashboard/chart.jsx";
 
 const Dashboard = () => {
   return (
@@ -9,8 +10,16 @@ const Dashboard = () => {
         <p className="text-gray-600 text-lg mt-1">Welcome to your financial overview</p>
       </div>
       <SummaryCard />
+      <Chart />
+
     </div>
   );
 };
+
+
+
+
+  
+
 
 export default Dashboard;
