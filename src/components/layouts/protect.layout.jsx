@@ -9,7 +9,6 @@ const ProtectLayout = () => {
   if (!isLoaded) return null;
   // If not loaded, return null (or a loading spinner)
   if (isLoaded && !isSignedIn) return <Navigate to="/login" />;
-  console.log(user);
 
   return <Outlet />;
 };
