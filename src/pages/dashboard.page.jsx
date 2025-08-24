@@ -3,7 +3,7 @@
 import { useState } from "react";
 import SummaryCard from "./../components/dashboard/summary-card.jsx";
 import Chart from "./../components/dashboard/chart.jsx";
-import TransactionsList from "./../components/dashboard/last10-transactions.jsx";
+import TransactionsList from "../components/dashboard/recenttransactions.jsx";
 
 const Dashboard = () => {
   // Lifted state: controls selected chart type
