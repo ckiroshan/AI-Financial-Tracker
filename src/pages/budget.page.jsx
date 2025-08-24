@@ -1,0 +1,13 @@
+const BudgetPage = () => {
+  return (
+    <div className="rounded-lg mx-2 md:mx-20 lg:mx-30 my-2 py-4 lg:px-8">
+      {/* Header */}
+      <div className="px-6 py-4 text-center">
+        <h1 className="text-2xl font-bold text-gray-800">Budget</h1>
+        <p className="text-gray-600 text-lg mt-1">This is your Budget overview</p>
+      </div>
+    </div>
+  );
+};
+
+export default BudgetPage;
