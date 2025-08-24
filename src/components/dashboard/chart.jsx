@@ -1,18 +1,9 @@
-import { useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
+"use client";
 
-const Chart = () => {
-  const [selectedChart, setSelectedChart] = useState("expense"); // default is expense
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
-  // Dummy data (grouped by day)
+const Chart = ({ selectedType, setSelectedType }) => {
+  // Dummy data grouped by day
   const data = [
     { date: "Aug 1", income: 5000, expense: 2000 },
     { date: "Aug 2", income: 3000, expense: 1200 },
@@ -28,21 +19,17 @@ const Chart = () => {
       {/* Toggle Buttons */}
       <div className="flex justify-center gap-4 mb-4">
         <button
-          onClick={() => setSelectedChart("expense")}
+          onClick={() => setSelectedType("expense")}
           className={`px-4 py-2 rounded-lg font-semibold ${
-            selectedChart === "expense"
-              ? "bg-red-500 text-white"
-              : "bg-gray-200 text-gray-700"
+            selectedType === "expense" ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"
           }`}
         >
           Expenses
         </button>
         <button
-          onClick={() => setSelectedChart("income")}
+          onClick={() => setSelectedType("income")}
           className={`px-4 py-2 rounded-lg font-semibold ${
-            selectedChart === "income"
-              ? "bg-green-500 text-white"
-              : "bg-gray-200 text-gray-700"
+            selectedType === "income" ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700"
           }`}
         >
           Income
@@ -56,7 +43,7 @@ const Chart = () => {
           <XAxis dataKey="date" />
           <YAxis />
           <Tooltip />
-          {selectedChart === "expense" ? (
+          {selectedType === "expense" ? (
             <Bar dataKey="expense" fill="#f44336" />
           ) : (
             <Bar dataKey="income" fill="#4caf50" />
