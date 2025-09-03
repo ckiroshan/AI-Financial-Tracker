@@ -2,6 +2,8 @@ import { useState } from "react";
 import Transactions from "./../components/transactions/transactions.jsx";
 import { MonthYearPicker } from "@/components/transactions/month-year-picker.jsx";
 import ReceiptsCarousel from "@/components/transactions/receipt/receipt-carousel.jsx";
+import CategoryList from "@/components/transactions/category/category-list.jsx";
+
 const allReceipts = [
   { merchantName: "PEOPLE'S BANK", amountDetected: 3500, context: "Cardless Deposit", transactionDate: "2024-02-25T07:59:23.000Z", fileUrl: "https://placehold.co/600x400", isProcessed: true, id: "68b21c7ae4fe6b8236c9ac61" },
   { merchantName: "COOL PLANET", amountDetected: -5975, context: "Mens accessories, shirt, cufflinks", transactionDate: "2024-03-02T11:15:45.000Z", fileUrl: "https://placehold.co/600x400", isProcessed: true, id: "a1f4b2c3d4e5f67890123456" },
@@ -26,6 +28,11 @@ const TransactionsPage = () => {
       <div className="mt-10">
         <h2 className="text-xl lg:text-2xl font-bold mb-4">Receipts</h2>
         <ReceiptsCarousel receipts={allReceipts} />
+      </div>
+      {/* Categories Section */}
+      <div className="mt-18">
+        <h2 className="text-xl lg:text-2xl font-bold mb-4">Categories</h2>
+        <CategoryList/>
       </div>
     </div>
   );
