@@ -2,10 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PlusCircle, Camera, Box } from "lucide-react";
 import AIReceiptModal from "./ai-receipt-modal";
+import TransactionModal from "./transaction-modal";
+import CategoryModal from "./category-modal";
 import { useState } from "react";
 
 export default function ActionButtons() {
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const actions = [
     {
@@ -18,13 +22,13 @@ export default function ActionButtons() {
       label: "Transaction",
       icon: <PlusCircle className="size-6" />,
       tooltip: "Manually add a new income or expense transaction",
-      onClick: () => alert("Transaction clicked"),
+      onClick: () => setTransactionModalOpen(true),
     },
     {
       label: "Category",
       icon: <Box className="size-6" />,
       tooltip: "Create a new category to organize your transactions",
-      onClick: () => alert("Category clicked"),
+      onClick: () => setCategoryModalOpen(true),
     },
   ];
 
@@ -48,8 +52,10 @@ export default function ActionButtons() {
         </div>
       </TooltipProvider>
 
-      {/* Modal */}
+      {/* Modals */}
       <AIReceiptModal open={aiModalOpen} onClose={() => setAiModalOpen(false)} />
+      <TransactionModal open={transactionModalOpen} onClose={() => setTransactionModalOpen(false)} />
+      <CategoryModal open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} />
     </>
   );
 }
