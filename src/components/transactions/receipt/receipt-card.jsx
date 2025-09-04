@@ -12,10 +12,10 @@ export default function ReceiptCard({ receipt, onDelete, onProcess }) {
       <CardContent className="flex flex-col flex-1 justify-between px-4">
         <div>
           <div className="flex items-center justify-between">
-            <h3 className="font-medium text-lg">{receipt.merchantName}</h3>
+            <h3 className="font-medium md:text-lg">{receipt.merchantName}</h3>
             {/* Process / Check */}
             {receipt.isProcessed ? (
-              <CheckCircle className="text-green-600" size={20} />
+              <CheckCircle className="text-green-600 size-6" />
             ) : (
               <Button variant="default" size="sm" onClick={() => onProcess?.(receipt.id)}>
                 Process
@@ -26,7 +26,7 @@ export default function ReceiptCard({ receipt, onDelete, onProcess }) {
           <div className="flex items-center justify-between">
             <p className="mt-2 font-bold text-primary">Rs. {receipt.amountDetected.toLocaleString()}</p>
             {/* Delete button */}
-            <Button variant="ghost" size="5" onClick={() => onDelete?.(receipt.id)} className="text-red-500 hover:text-red-600">
+            <Button variant="destructive" onClick={() => onDelete?.(receipt.id)} className="size-7 text-background">
               <Trash2 className="size-5" />
             </Button>
           </div>

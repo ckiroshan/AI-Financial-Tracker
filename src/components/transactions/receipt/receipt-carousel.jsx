@@ -57,8 +57,8 @@ export default function ReceiptsCarousel({ receipts }) {
       {/* Carousel */}
       <div className="relative flex items-center" ref={containerRef}>
         {/* Left arrow */}
-        <Button variant="outline" size="icon" className="z-10 mr-2" onClick={prev} disabled={currentIndex === 0}>
-          <ChevronLeft strokeWidth={2.6} className="text-green-600 size-7" />
+        <Button variant="outline" size="icon" className="z-10 mr-1 md:mr-2" onClick={prev} disabled={currentIndex === 0}>
+          <ChevronLeft strokeWidth={2.6} className="text-green-600 size-5 md:size-7" />
         </Button>
 
         {/* Cards or Empty Message */}
@@ -115,8 +115,8 @@ export default function ReceiptsCarousel({ receipts }) {
         </div>
 
         {/* Right arrow */}
-        <Button variant="outline" size="icon" className="z-10 ml-2" onClick={next} disabled={currentIndex === maxIndex}>
-          <ChevronRight strokeWidth={2.6} className="text-green-600 size-7" />
+        <Button variant="outline" size="icon" className="z-10 ml-1 md:ml-2" onClick={next} disabled={currentIndex === maxIndex}>
+          <ChevronRight strokeWidth={2.6} className="text-green-600 size-5 md:size-7" />
         </Button>
       </div>
     </div>

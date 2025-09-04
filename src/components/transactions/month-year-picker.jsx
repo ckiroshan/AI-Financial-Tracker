@@ -17,7 +17,7 @@ export function MonthYearPicker({ selectedMonth, onChange }) {
     <Popover open={open} onOpenChange={setOpen}>
       {/* Trigger button with selected month */}
       <PopoverTrigger asChild>
-        <Button variant="outline" className="flex items-center">
+        <Button className="flex items-center font-bold shadow-md">
           <CalendarIcon size={16} />
           { selectedMonth 
             ? format(selectedMonth, "MMMM yyyy") // Format selected date

@@ -83,7 +83,7 @@ function Transactions({ selectedMonth }) {
           {/* Edit Button */}
           <Button variant="outline" onClick={() => setEditMode(!editMode)}>
             {editMode ? <SquareCheck /> : <SquarePen />}
-            {editMode ? "Done" : "Edit Transactions"}
+            {editMode ? "Done" : "Edit"}
           </Button>
           {/* View Button */}
           {!isMobile && (
