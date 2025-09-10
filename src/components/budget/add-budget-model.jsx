@@ -37,7 +37,6 @@ export function AddBudgetModal({ isOpen, onClose, onAdd }) {
     name: "",
     amount: "",
     category: "",
-    description: "",
     startDate: undefined,
     endDate: undefined,
   });
@@ -53,7 +52,6 @@ export function AddBudgetModal({ isOpen, onClose, onAdd }) {
       name: formData.name,
       amount: Number.parseFloat(formData.amount),
       category: formData.category,
-      description: formData.description,
       startDate: formData.startDate.toISOString().split("T")[0],
       endDate: formData.endDate.toISOString().split("T")[0],
     });
@@ -62,7 +60,6 @@ export function AddBudgetModal({ isOpen, onClose, onAdd }) {
       name: "",
       amount: "",
       category: "",
-      description: "",
       startDate: undefined,
       endDate: undefined,
     });
@@ -75,7 +72,6 @@ export function AddBudgetModal({ isOpen, onClose, onAdd }) {
       name: "",
       amount: "",
       category: "",
-      description: "",
       startDate: undefined,
       endDate: undefined,
     });
@@ -175,17 +171,6 @@ export function AddBudgetModal({ isOpen, onClose, onAdd }) {
                 </PopoverContent>
               </Popover>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              id="description"
-              placeholder="Brief description of this budget..."
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-            />
           </div>
 
           <DialogFooter>
