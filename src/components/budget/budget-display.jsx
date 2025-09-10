@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import BudgetCard from "./budget-card";
-import { BudgetTable } from "./budget-table";
 import { Plus } from "lucide-react";
 
-const BudgetDisplay = ({ viewMode, filterStatus, searchQuery, budgets, onDelete }) => {
+const BudgetDisplay = ({filterStatus, searchQuery, budgets, onDelete }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 3;
@@ -26,8 +25,8 @@ const BudgetDisplay = ({ viewMode, filterStatus, searchQuery, budgets, onDelete 
 
   return (
     <div>
-      {viewMode === "cards" ? (
-        <div className="space 6">
+      
+        <div className="space 6 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedBudgets.map((budget) => (
               <BudgetCard key={budget.id} budget={budget} onDelete={onDelete} />
@@ -35,18 +34,14 @@ const BudgetDisplay = ({ viewMode, filterStatus, searchQuery, budgets, onDelete 
           </div>
 
           {filteredBudgets.length > cardsPerPage && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                Showing {startIndex + 1} to {Math.min(startIndex + cardsPerPage, filteredBudgets.length)} of{" "}
-                {filteredBudgets.length} budgets
-              </p>
+            <div className="flex items-center justify-center gap-4 mt-6">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="border-green-500 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Previous
                 </Button>
@@ -58,7 +53,7 @@ const BudgetDisplay = ({ viewMode, filterStatus, searchQuery, budgets, onDelete 
                   size="sm"
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="border-green-500 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Next
                 </Button>
@@ -66,9 +61,7 @@ const BudgetDisplay = ({ viewMode, filterStatus, searchQuery, budgets, onDelete 
             </div>
           )}
         </div>
-      ) : (
-        <BudgetTable budgets={filteredBudgets} onDelete={onDelete} />
-      )}
+      
 
       {filteredBudgets.length === 0 && (
         <div className="text-center py-12">
