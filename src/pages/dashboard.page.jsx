@@ -37,7 +37,7 @@ const Dashboard = () => {
       <Chart selectedType={selectedType} setSelectedType={setSelectedType} />
 
       {/* Transactions List */}
-      <TransactionsList selectedType={selectedType} />
+      <TransactionsList  selectedMonth={selectedMonth} selectedType={selectedType} />
     </div>
   );
 };
