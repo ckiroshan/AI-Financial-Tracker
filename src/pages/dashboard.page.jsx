@@ -1,6 +1,6 @@
 import { useState } from "react";
 import SummaryCard from "./../components/dashboard/summary-card.jsx";
-import Chart from "./../components/dashboard/chart.jsx";
+import { TransactionsChart } from "../components/dashboard/transactions-chart.jsx";
 import TransactionsList from "../components/dashboard/recent-transactions.jsx";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
@@ -34,7 +34,7 @@ const Dashboard = () => {
       <SummaryCard selectedMonth={selectedMonth} />
 
       {/* Chart */}
-      <Chart selectedType={selectedType} setSelectedType={setSelectedType} />
+      <TransactionsChart selectedType={selectedType} setSelectedType={setSelectedType} selectedMonth={selectedMonth} />
 
       {/* Transactions List */}
       <TransactionsList  selectedMonth={selectedMonth} selectedType={selectedType} />
