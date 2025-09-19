@@ -1,14 +1,31 @@
 import { format } from "date-fns";
-import { ArrowUpDown, SquarePen, Trash } from "lucide-react";
+import { ArrowUpDown, SquarePen, Trash, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 
 // Generates column definitions for TanStack React Table
 export const getColumns = (editMode) => {
-  // editMode: boolean flag to conditionally include action buttons
+  // editMode: boolean flag to conditionally include action column
 
+  // Column definition: (Date, Type, Amount, Note, Source, Category)
   const baseColumns = [
-    { // Transaction Type
+    { // Transaction Date
+      accessorKey: "date",
+      // header component with sorting functionality
+      header: ({ column }) => (
+        <Button variant="ghost" className="font-semibold text-base" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      // format date cell
+      cell: ({ row }) => {
+        const date = new Date(row.getValue("date"));
+        return format(date, "yyyy-MM-dd");
+      },
+    },
+    { // Transaction Type (income/expense)
       accessorKey: "type",
+      // header component with sorting functionality
       header: ({ column }) => (
         <Button variant="ghost" className="font-semibold text-base" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
           Type
@@ -18,44 +35,44 @@ export const getColumns = (editMode) => {
       cell: ({ row }) => {
         // Badge styling based on type
         const type = row.getValue("type");
-        return <span className={`px-2 py-1 rounded text-sm font-semibold ${type === "income" ? "bg-green-100 text-primary" : "bg-red-100 text-red-700"}`}>{type}</span>;
+        const formattedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+        return <span className={`px-2 py-1 rounded-lg text-sm font-semibold text-background 
+          ${type === "income" 
+            ? "bg-green-500" 
+            : "bg-red-600"
+          }`}>{formattedType}</span>;
       },
     },
     { // Transaction Amount
       accessorKey: "amount",
       header: "Amount",
+      // format amount cell with currency & color
       cell: ({ row }) => {
+        // text styling based on type
+        const type = row.getValue("type");
         const amount = parseFloat(row.getValue("amount"));
-        return <span className={`font-medium text-lg ${amount > 0 ? "text-green-600" : "text-red-600"}`}>Rs. {amount.toLocaleString()}</span>;
+        return <span className={`font-semibold text-lg 
+          ${type === "income" 
+            ? "text-green-600" 
+            : "text-red-600"
+          }`}>Rs. {Math.ceil(amount).toLocaleString()}</span>;
       },
     },
     { // Transaction Note
       accessorKey: "note",
       header: "Note",
     },
-    { // Transaction Date
-      accessorKey: "date",
-      header: ({ column }) => (
-        <Button variant="ghost" className="font-semibold text-base" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const date = new Date(row.getValue("date"));
-        return format(date, "yyyy-MM-dd");
-      },
-    },
     { // Merchant of transaction
       accessorKey: "source",
       header: "Source",
-    },
+    }, 
     { // Category name
       accessorKey: "categoryId.name", // nested accessor
       header: "Category",
+      // format Category cell with category name/placeholder
       cell: ({ row }) => {
         const category = row.original.categoryId?.name || " ——— ";
-        return <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm">{category}</span>;
+        return <span className="text-blue-400 font-bold px-2 py-1 rounded-lg text-sm">{category}</span>;
       },
     },
   ];
@@ -65,17 +82,18 @@ export const getColumns = (editMode) => {
     baseColumns.push({
       id: "actions",
       header: "Actions",
+      // format action cell with action buttons
       cell: ({ row }) => {
-        const transaction = row.original;
+        const transaction = row.original; // transaction object for actions
         return (
           <div className="flex gap-2">
              {/* Edit button */}
-            <Button variant="outline" onClick={() => alert(`Edit ${transaction.id}`)}>
-              <SquarePen />
+            <Button className="bg-yellow-400 border-1 text-background border-yellow-500 hover:bg-yellow-500 size-8 w-17" onClick={() => alert(`Edit: ${transaction.note}`)}>
+              <SquarePen className="size-5" /> Edit
             </Button>
             {/* Delete button */}
-            <Button variant="destructive" onClick={() => alert(`Delete ${transaction.id}`)}>
-              <Trash />
+            <Button className="text-background bg-red-600 hover:bg-red-700 border-red-500 size-8 w-22" onClick={() => alert(`Delete: ${transaction.note}`)}>
+              <Trash2 className="size-5" /> Delete
             </Button>
           </div>
         );
@@ -83,5 +101,6 @@ export const getColumns = (editMode) => {
     });
   }
 
+  // Returns array of column definitions
   return baseColumns;
 };

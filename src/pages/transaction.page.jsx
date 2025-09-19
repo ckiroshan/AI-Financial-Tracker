@@ -16,13 +16,14 @@ const allReceipts = [
 ];
 
 const TransactionsPage = () => {
-  const [selectedMonth, setSelectedMonth] = useState(null); // Month filter
+  const [selectedMonth, setSelectedMonth] = useState(new Date()); // default: date now
 
   return (
     <div className="rounded-lg mx-4 md:mx-20 lg:mx-24 my-2 py-4 lg:px-8">
       <ActionButtons />
       <div className="pb-4 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-xl lg:text-2xl font-bold text-gray-800">Transactions</h1>
+        {/* Month, Year selector */}
         <MonthYearPicker selectedMonth={selectedMonth} onChange={setSelectedMonth} />
       </div>
       <Transactions selectedMonth={selectedMonth} />
