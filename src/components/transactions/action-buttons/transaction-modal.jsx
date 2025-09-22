@@ -25,7 +25,7 @@ const transactionSchema = z.object({
 
 // Modal to add/update a transaction
 export default function TransactionModal({ open, onClose, onCreated, prefill }) {
-  const { postProtectedData, getProtectedData } = useApi();
+  const { postProtectedData, getProtectedData, putProtectedData } = useApi(); // Custom hook to fetch data
   const [categories, setCategories] = useState([]); // manage list of categories
   const [loadingCategories, setLoadingCategories] = useState(false); // manage loading state
 
@@ -64,21 +64,45 @@ export default function TransactionModal({ open, onClose, onCreated, prefill }) 
 
   // Reset form when modal closes
   useEffect(() => {
-  if (open) {
+    if (!open) return;
+
     const prefillData = prefill ? { ...prefill } : {};
     if (prefillData.date) {
       // Convert ISO datetime to YYYY-MM-DD
       prefillData.date = new Date(prefillData.date).toISOString().split("T")[0];
     }
+    prefillData.categoryId =
+      prefillData.categoryId && typeof prefillData.categoryId === "object"
+        ? prefillData.categoryId.id || ""
+        : prefillData.categoryId || "";
     reset(prefillData);
-  }
-}, [open, prefill, reset]);
+
+    if (prefillData.type) {
+      setLoadingCategories(true);
+      setTimeout(async () => {
+        try {
+          const categories = await getProtectedData(`categories?type=${prefillData.type}`);
+          setCategories(categories);
+          if (prefillData.categoryId) setValue("categoryId", prefillData.categoryId, { shouldValidate: true });
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoadingCategories(false);
+        }
+      }, 150);
+    }
+  }, [open]);
 
   // Handle form submission
   const onSubmit = async (data) => {
     try {
-      const payload = { ...data, categoryId: data.category };
-      await postProtectedData("transactions", data);
+      if (prefill && prefill.id) {
+        // Editing existing transaction
+        await putProtectedData(`transactions/${prefill.id}`, data);
+      } else {
+        // Creating new transaction
+        await postProtectedData("transactions", data);
+      }
       if (onCreated) onCreated(); // refresh list
       onClose();
     } catch (err) {
@@ -90,8 +114,12 @@ export default function TransactionModal({ open, onClose, onCreated, prefill }) 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="flex items-center">
-          <DialogTitle>Add Transaction</DialogTitle>
-          <DialogDescription>Create a transaction by submitting this form</DialogDescription>
+          <DialogTitle>{prefill && prefill.id ? "Update Transaction" : "Add Transaction"}</DialogTitle>
+          <DialogDescription>
+            {prefill && prefill.id
+              ? "Modify details of this transaction."
+              : "Create a transaction by filling this form."}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -142,7 +170,7 @@ export default function TransactionModal({ open, onClose, onCreated, prefill }) 
           {/* Category */}
           <div>
             <label className="block text-sm font-medium mb-1">Category</label>
-            <Select value={watch("categoryId")} onValueChange={(value) => setValue("categoryId", value, { shouldValidate: true })} disabled={!selectedType}>
+            <Select value={watch("categoryId")} onValueChange={(value) => setValue("categoryId", value, { shouldValidate: true })} disabled={!selectedType || loadingCategories}>
               <SelectTrigger>
                 <SelectValue placeholder={selectedType ? "Select category" : "Select type first"} />
               </SelectTrigger>

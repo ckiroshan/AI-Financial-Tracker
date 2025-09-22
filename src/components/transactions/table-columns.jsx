@@ -3,7 +3,7 @@ import { ArrowUpDown, SquarePen, Trash, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 
 // Generates column definitions for TanStack React Table
-export const getColumns = (editMode) => {
+export const getColumns = (editMode, onEdit, onDelete) => {
   // editMode: boolean flag to conditionally include action column
 
   // Column definition: (Date, Type, Amount, Note, Source, Category)
@@ -88,11 +88,11 @@ export const getColumns = (editMode) => {
         return (
           <div className="flex gap-2">
              {/* Edit button */}
-            <Button className="bg-yellow-400 border-1 text-background border-yellow-500 hover:bg-yellow-500 size-8 w-17" onClick={() => alert(`Edit: ${transaction.note}`)}>
+            <Button className="bg-yellow-400 border-1 text-background border-yellow-500 hover:bg-yellow-500 size-8 w-17" onClick={() => onEdit(transaction)}>
               <SquarePen className="size-5" /> Edit
             </Button>
             {/* Delete button */}
-            <Button className="text-background bg-red-600 hover:bg-red-700 border-red-500 size-8 w-22" onClick={() => alert(`Delete: ${transaction.note}`)}>
+            <Button className="text-background bg-red-600 hover:bg-red-700 border-red-500 size-8 w-22" onClick={() => onDelete(transaction)}>
               <Trash2 className="size-5" /> Delete
             </Button>
           </div>

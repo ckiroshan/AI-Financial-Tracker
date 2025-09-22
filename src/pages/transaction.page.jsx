@@ -27,7 +27,7 @@ const TransactionsPage = () => {
         {/* Month, Year selector */}
         <MonthYearPicker selectedMonth={selectedMonth} onChange={setSelectedMonth} />
       </div>
-      <Transactions selectedMonth={selectedMonth} refreshKey={refreshKey} />
+      <Transactions selectedMonth={selectedMonth} refreshKey={refreshKey} setRefreshKey={setRefreshKey} />
       {/* Receipts Section */}
       <div className="mt-10">
         <h2 className="text-xl lg:text-2xl font-bold mb-4">Receipts</h2>

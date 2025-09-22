@@ -59,5 +59,35 @@ export const useApi = () => {
     return res.json();
   };
 
-  return { getProtectedData, postProtectedData, postProtectedFile };
+  // Update data to protected endpoint
+  const putProtectedData = async (endpoint, body) => {
+    const token = await getToken(); // Retrieve auth token
+    // Initiate Put request to specified endpoint to update form data
+    const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`Failed to update ${endpoint}`);
+    return await response.json(); // Parse & return JSON response
+  };
+
+  // Delete data to protected endpoint
+  const deleteProtectedData = async (endpoint) => {
+    const token = await getToken(); // Retrieve auth token
+    // Initiate delete request
+    const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) throw new Error(`Failed to delete ${endpoint}`);
+    return await response.json(); // Parse & return JSON response
+  };
+
+  return { getProtectedData, postProtectedData, postProtectedFile, putProtectedData, deleteProtectedData };
 };

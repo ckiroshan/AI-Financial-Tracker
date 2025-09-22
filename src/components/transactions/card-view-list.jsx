@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TransactionModal from "./action-buttons/transaction-modal";
 
 // Grid of transaction cards
-export default function CardViewList({ data, editMode, loading }) {
+export default function CardViewList({ data, editMode, loading, handleEdit, handleDelete }) {
   const [pageIndex, setPageIndex] = useState(0); // Track current page
   const [transactionModalOpen, setTransactionModalOpen] = useState(false); // Trigger transaction form
   
@@ -60,11 +60,22 @@ export default function CardViewList({ data, editMode, loading }) {
                 {/* Action buttons: only visible in edit mode */}
                 {editMode && (
                   <div className="flex gap-2 mt-2">
-                    <Button className="text-background bg-yellow-400 hover:bg-yellow-500 size-8 w-16">
+                    <Button
+                      className="text-background bg-yellow-400 hover:bg-yellow-500 size-8 w-16"
+                      onClick={() =>
+                        handleEdit({
+                          ...t,
+                          date: new Date(t.date).toISOString().split("T")[0],
+                          categoryId: t.categoryId || "",
+                          id: t.id,
+                        })
+                      }
+                    >
                       <SquarePen  className="size-4" /> Edit
                     </Button>
-                    <Button className="text-background bg-red-600 hover:bg-red-700 size-8 w-21">
-                      <Trash2   className="size-4" /> Delete
+                    <Button className="text-background bg-red-600 hover:bg-red-700 size-8 w-21" 
+                    onClick={() => handleDelete(t)}>
+                      <Trash2 className="size-4" /> Delete
                     </Button>
                   </div>
                 )}
