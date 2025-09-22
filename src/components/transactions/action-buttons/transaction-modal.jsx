@@ -1,29 +1,35 @@
-import { useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-const categoryOptions = [
-  { id: "1", name: "Food" },
-  { id: "2", name: "Transport" },
-  { id: "3", name: "Entertainment" },
-];
+import { useApi } from "@/api";
 
 // Zod schema
 const transactionSchema = z.object({
-  type: z.enum(["income", "expense"], { required_error: "Type is required", invalid_type_error: "Invalid type selected" }),
-  amount: z.coerce.number({ required_error: "Amount is required", invalid_type_error: "Amount must be a number" }).positive("Amount must be greater than 0"),
-  note: z.string({ required_error: "Note is required" }).min(1, "Note is required"),
+  type: z.enum(["income", "expense"], 
+        { required_error: "Type is required", invalid_type_error: "Invalid type selected" }),
+  amount: z.coerce.number(
+        { required_error: "Amount is required", 
+          invalid_type_error: "Amount must be a number" 
+        }).positive("Amount must be greater than 0"),
+  note: z.string({ required_error: "Note is required"}).min(1, "Note is required"),
   date: z.string().min(1, "Date is required"),
   source: z.string().min(1, "Source is required"),
-  category: z.string().min(1, "Category is required"),
+  categoryId: z.string().min(1, "Category is required"),
+  receiptId: z.string().optional().nullable(),
 });
 
-export default function TransactionModal({ open, onClose }) {
+// Modal to add/update a transaction
+export default function TransactionModal({ open, onClose, onCreated, prefill }) {
+  const { postProtectedData, getProtectedData } = useApi();
+  const [categories, setCategories] = useState([]); // manage list of categories
+  const [loadingCategories, setLoadingCategories] = useState(false); // manage loading state
+
+  // Initialize React Hook Form
   const {
     register,
     handleSubmit,
@@ -31,19 +37,53 @@ export default function TransactionModal({ open, onClose }) {
     formState: { errors },
     setValue,
     watch,
-  } = useForm({ resolver: zodResolver(transactionSchema), defaultValues: { type: "", amount: "", note: "", date: "", source: "", category: "" } });
+  } = useForm({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: { type: "", amount: "", note: "", date: "", source: "", category: "", receiptId: null },
+  });
+
+  // type field dynamically fetch categories
+  const selectedType = watch("type");
+
+  // fetch categories based on selected transaction type
+  useEffect(() => {
+    if (!selectedType) return;
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const data = await getProtectedData(`categories?type=${selectedType}`);
+        setCategories(data);
+      } catch (err) {
+        console.error("Failed to fetch categories", err);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, [selectedType]);
 
   // Reset form when modal closes
   useEffect(() => {
-    if (!open) {
-      reset();
+  if (open) {
+    const prefillData = prefill ? { ...prefill } : {};
+    if (prefillData.date) {
+      // Convert ISO datetime to YYYY-MM-DD
+      prefillData.date = new Date(prefillData.date).toISOString().split("T")[0];
     }
-  }, [open, reset]);
+    reset(prefillData);
+  }
+}, [open, prefill, reset]);
 
   // Handle form submission
-  const onSubmit = (data) => {
-    console.log("Transaction submitted:", data);
-    onClose();
+  const onSubmit = async (data) => {
+    try {
+      const payload = { ...data, categoryId: data.category };
+      await postProtectedData("transactions", data);
+      if (onCreated) onCreated(); // refresh list
+      onClose();
+    } catch (err) {
+      console.error("Failed to create transaction", err);
+    }
   };
 
   return (
@@ -51,6 +91,7 @@ export default function TransactionModal({ open, onClose }) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="flex items-center">
           <DialogTitle>Add Transaction</DialogTitle>
+          <DialogDescription>Create a transaction by submitting this form</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -73,7 +114,7 @@ export default function TransactionModal({ open, onClose }) {
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium mb-1">Amount</label>
-            <Input type="number" step="0.01" {...register("amount", { valueAsNumber: true })} placeholder="Enter amount" />
+            <Input type="number" step="0.01" {...register("amount")} placeholder="Enter amount" />
             {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
           </div>
 
@@ -101,19 +142,19 @@ export default function TransactionModal({ open, onClose }) {
           {/* Category */}
           <div>
             <label className="block text-sm font-medium mb-1">Category</label>
-            <Select value={watch("category")} onValueChange={(value) => setValue("category", value)}>
+            <Select value={watch("categoryId")} onValueChange={(value) => setValue("categoryId", value, { shouldValidate: true })} disabled={!selectedType}>
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={selectedType ? "Select category" : "Select type first"} />
               </SelectTrigger>
               <SelectContent>
-                {categoryOptions.map((category) => (
-                  <SelectItem key={category.id} value={category.name}>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
                     {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
+            {errors.categoryId && <p className="text-red-500 text-xs">{errors.categoryId.message}</p>}
           </div>
 
           {/* Action Buttons */}

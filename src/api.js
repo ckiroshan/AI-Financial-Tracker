@@ -26,5 +26,38 @@ export const useApi = () => {
     }
   };
 
-  return { getProtectedData };
+  // Post data to protected endpoint
+  const postProtectedData = async (endpoint, body) => {
+    // Retrieve auth token
+    const token = await getToken();
+    // Initiate Post request to specified endpoint
+    const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`Failed to post to ${endpoint}`);
+    // Parse & return JSON response
+    return await response.json();
+  };
+
+  // Post file/image to protected endpoint
+  const postProtectedFile = async (endpoint, formData) => {
+    // Retrieve auth token
+    const token = await getToken();
+    // Initiate Post request to specified endpoint with form data
+    const res = await fetch(`${API_BASE_URL}/${endpoint}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`},
+      body: formData,
+    });
+    if (!res.ok) throw new Error(`Failed to upload file to ${endpoint}`);
+    // Parse & return JSON response
+    return res.json();
+  };
+
+  return { getProtectedData, postProtectedData, postProtectedFile };
 };

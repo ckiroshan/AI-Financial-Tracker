@@ -6,11 +6,13 @@ import TransactionModal from "./transaction-modal";
 import CategoryModal from "./category-modal";
 import { useState } from "react";
 
-export default function ActionButtons() {
-  const [aiModalOpen, setAiModalOpen] = useState(false);
-  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+// Buttons component to trigger various modals
+export default function ActionButtons({ onCreated }) {
+  const [aiModalOpen, setAiModalOpen] = useState(false); // manage AI Receipt Modal visibility
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false); // manage Transaction Modal visibility
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false); // manage Category Modal visibility
 
+  // Array defining buttons' properties
   const actions = [
     {
       label: "A.I Receipt",
@@ -39,6 +41,7 @@ export default function ActionButtons() {
           {actions.map((action, idx) => (
             <Tooltip key={idx}>
               <TooltipTrigger asChild>
+                {/* Button component for each action */}
                 <Button onClick={action.onClick} className="text-md lg:text-lg text-foreground bg-background border-2 hover:text-background rounded-4xl h-22 lg:mx-4 flex flex-col">
                   {action.icon}
                   {action.label}
@@ -53,9 +56,9 @@ export default function ActionButtons() {
       </TooltipProvider>
 
       {/* Modals */}
-      <AIReceiptModal open={aiModalOpen} onClose={() => setAiModalOpen(false)} />
-      <TransactionModal open={transactionModalOpen} onClose={() => setTransactionModalOpen(false)} />
-      <CategoryModal open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} />
+      <AIReceiptModal open={aiModalOpen} onClose={() => setAiModalOpen(false)} onCreated={onCreated} />
+      <TransactionModal open={transactionModalOpen} onClose={() => setTransactionModalOpen(false)} onCreated={onCreated} />
+      <CategoryModal open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} onCreated={onCreated} />
     </>
   );
 }

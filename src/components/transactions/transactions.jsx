@@ -7,7 +7,7 @@ import ViewCardList from "./card-view-list";
 import { Input } from "../ui/input";
 import { useApi } from "@/api";
 
-function Transactions({ selectedMonth }) {
+function Transactions({ selectedMonth, refreshKey }) {
   const { getProtectedData } = useApi(); // Custom hook: Get authenticated API access
   const [viewMode, setViewMode] = useState("table"); // Toggles data-table / card-list
   const [editMode, setEditMode] = useState(false); // Toggles edit mode
@@ -34,7 +34,7 @@ function Transactions({ selectedMonth }) {
       }
     };
     fetchTransactions();
-  }, [selectedMonth]); // Dependency: render when selectedMonth changes
+  }, [selectedMonth, refreshKey]); // Dependency: render when selectedMonth, refreshKey changes
 
   // Detect screen size
   useEffect(() => {

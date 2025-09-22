@@ -17,16 +17,17 @@ const allReceipts = [
 
 const TransactionsPage = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date()); // default: date now
+  const [refreshKey, setRefreshKey] = useState(0); // trigger re-fetch
 
   return (
     <div className="rounded-lg mx-4 md:mx-20 lg:mx-24 my-2 py-4 lg:px-8">
-      <ActionButtons />
+      <ActionButtons onCreated={() => setRefreshKey(k => k + 1)} />
       <div className="pb-4 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-xl lg:text-2xl font-bold text-gray-800">Transactions</h1>
         {/* Month, Year selector */}
         <MonthYearPicker selectedMonth={selectedMonth} onChange={setSelectedMonth} />
       </div>
-      <Transactions selectedMonth={selectedMonth} />
+      <Transactions selectedMonth={selectedMonth} refreshKey={refreshKey} />
       {/* Receipts Section */}
       <div className="mt-10">
         <h2 className="text-xl lg:text-2xl font-bold mb-4">Receipts</h2>
