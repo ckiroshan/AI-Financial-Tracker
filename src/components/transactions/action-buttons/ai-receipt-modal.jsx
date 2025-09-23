@@ -34,6 +34,7 @@ export default function AIReceiptModal({ open, onClose, onCreated }) {
       // Pass draftTransaction to TransactionModal
       setTransactionPrefill(receipt.draftTransaction);
       setTransactionModalOpen(true);
+      if (onCreated) onCreated();
       onClose(); // close AI modal
     } catch (err) {
       console.error("Failed to parse receipt", err);
