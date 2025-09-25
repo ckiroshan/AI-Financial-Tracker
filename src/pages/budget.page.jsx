@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BudgetSummary from "../components/budget/budject-summary";
 import BudgetFilters from "../components/budget/budget-filters";
 import BudgetDisplay from "../components/budget/budget-display";
@@ -8,78 +8,81 @@ import { AddBudgetModal } from "../components/budget/add-budget-model";
 import { DateRangePicker } from "@/components/budget/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import {useApi} from "@/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const BudgetPage = () => {
+  const { getProtectedData } = useApi();
+
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [budgets, setBudgets] = useState([
-    {
-      id: 1,
-      name: "Monthly Groceries",
-      amount: 25000,
-      spent: 20000,
-      category: "Food & Dining",
-      startDate: "2025-09-01",
-      endDate: "2025-09-30",
-      status: "active",
-    },
-    {
-      id: 2,
-      name: "Entertainment",
-      amount: 10000,
-      spent: 7000,
-      category: "Entertainment",
-      startDate: "2025-07-01",
-      endDate: "2025-08-31",
-      status: "active",
-    },
-    {
-      id: 3,
-      name: "Transportation",
-      amount: 12000,
-      spent: 12000,
-      category: "Transportation",
-      startDate: "2025-01-01",
-      endDate: "2025-01-31",
-      status: "active",
-    },
-    {
-      id: 4,
-      name: "Holiday Shopping",
-      amount: 25000,
-      spent: 24500,
-      category: "Shopping",
-      startDate: "2025-08-01",
-      endDate: "2025-08-31",
-      status: "completed",
-    },
-    {
-      id: 5,
-      name: "Home Improvement",
-      amount: 30000,
-      spent: 35000,
-      category: "Home",
-      startDate: "2025-01-15",
-      endDate: "2025-03-15",
-      status: "active",
-    },
-  ]);
-
-  const handleAddBudget = (newBudget) => {
-    const budget = {
-      ...newBudget,
-      id: budgets.length + 1,
-      spent: 0,
-      status: "active",
+  const [budgets, setBudgets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchBudgets = async () => {
+      setLoading(true); 
+      try {
+        const data = await getProtectedData("budgets");
+        setBudgets(data);
+      } catch (err) {
+        console.error("Failed to fetch budgets", err);
+      } finally {
+        setLoading(false); 
+      }
     };
-    setBudgets([...budgets, budget]);
-    setIsAddModalOpen(false);
+    fetchBudgets();
+  }, []);
+
+
+
+  const handleAddBudget = async (newBudget) => {
+    try {
+      const token=await getToken();
+      const response = await fetch("http://localhost:8000/api/budgets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },  
+        body: JSON.stringify(newBudget),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to add budget");
+      }
+      const createdBudget = await response.json();
+      setBudgets([...budgets, createdBudget]);
+      setIsAddModalOpen(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const handleDeleteBudget = async (id) => {
+    try {
+      const token=await getToken(); 
+      const response = await fetch(`http://localhost:8000/api/budgets/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete budget");
+      }
+      setBudgets(budgets.filter((b) => b.id !== id));
+    }
+    catch (err) {
+      console.error(err);
+    } 
   };
 
-  const handleDeleteBudget = (id) => {
-    setBudgets(budgets.filter((b) => b.id !== id));
-  };
+  if (loading) {
+    return (
+      <Skeleton className="h-10 w-1/3 mx-4 md:mx-20 lg:mx-24 my-2 py-4 lg:px-8 rounded-lg" />
+    );
+  } 
+  
 
   return (
     <div className="rounded-lg mx-4 md:mx-20 lg:mx-24 my-2 py-4 lg:px-8">
