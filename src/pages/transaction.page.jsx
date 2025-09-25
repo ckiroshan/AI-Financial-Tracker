@@ -25,8 +25,9 @@ const TransactionsPage = () => {
       </div>
       {/* Categories Section */}
       <div className="mt-18">
-        <h2 className="text-xl lg:text-2xl font-bold mb-4">Categories</h2>
-        <CategoryList/>
+        <h2 className="text-xl lg:text-2xl font-bold mb-1">Categories</h2>
+        <p className="mb-4 lg:text-lg">This shows a list of categories that can be filtered as follows.</p>
+        <CategoryList refreshKey={refreshKey} setRefreshKey={setRefreshKey}/>
       </div>
     </div>
   );
