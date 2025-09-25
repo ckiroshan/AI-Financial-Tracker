@@ -5,28 +5,44 @@ import { Button } from "../ui/button";
 import { LayoutGrid, SquareCheck, SquarePen, Table as TableIcon } from "lucide-react";
 import ViewCardList from "./card-view-list";
 import { Input } from "../ui/input";
+import { useApi } from "@/api";
+import TransactionModal from "./action-buttons/transaction-modal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 
-function Transactions({ selectedMonth }) {
-  const [viewMode, setViewMode] = useState("table"); // Toggles table / cards
+function Transactions({ selectedMonth, refreshKey, setRefreshKey }) {
+  const { getProtectedData, postProtectedData, deleteProtectedData  } = useApi(); // Custom hook: Get authenticated API access
+  const [viewMode, setViewMode] = useState("table"); // Toggles data-table / card-list
   const [editMode, setEditMode] = useState(false); // Toggles edit mode
   const [isMobile, setIsMobile] = useState(false); // Toggles mobile mode
   const [searchTerm, setSearchTerm] = useState(""); // Search input state 
+  const [transactions, setTransactions] = useState([]); // List of transactions
+  const [loading, setLoading] = useState(true); // Manage loading state
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  // Edit/Delete states
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editPrefill, setEditPrefill] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState(null);
 
-  // Dummy data
-  const [transactions] = useState([
-    { type: "expense", amount: -5975, note: "Mens accessories, shirt, cufflinks", date: "2025-09-27T06:02:00.000Z", source: "COOL PLANET", categoryId: { name: "Shopping" } },
-    { type: "expense", amount: -19200, note: "Weekly groceries and household items", date: "2025-09-25T14:30:00.000Z", source: "Keells Super" },
-    { type: "income", amount: 125000, note: "Monthly salary credited", date: "2025-09-28T09:00:00.000Z", source: "ABC Technologies Inc.", categoryId: { name: "Salary" } },
-    { type: "income", amount: 15000, note: "Freelance web development project", date: "2025-09-20T11:15:00.000Z", source: "Upwork", categoryId: { name: "Freelance" } },
-    { type: "income", amount: 30000, note: "Sold old laptop", date: "2025-09-18T16:20:00.000Z", source: "Facebook Marketplace", categoryId: { name: "Other Income" } },
-    { type: "expense", amount: -4500, note: "Dinner date and drinks", date: "2025-09-29T19:15:00.000Z", source: "Ministry of Crab", categoryId: { name: "Food" } },
-    { type: "expense", amount: -2750, note: "Taxi rides for client meetings", date: "2025-09-30T08:40:00.000Z", source: "PickMe", categoryId: { name: "Transport" } },
-    { type: "income", amount: 25000, note: "Stock market dividends", date: "2025-09-28T10:45:00.000Z", source: "Colombo SE", categoryId: { name: "Investment" } },
-  ]);
+  // Fetch the data
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      try {
+        const month = selectedMonth.getMonth() + 1;
+        const year = selectedMonth.getFullYear();
+        const data = await getProtectedData(
+          `transactions?month=${month}&year=${year}`
+        );
+        setTransactions(data);
+      } catch (err) {
+        console.error("Failed to fetch transactions", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, [selectedMonth, refreshKey]); // Dependency: render when selectedMonth, refreshKey changes
 
   // Detect screen size
   useEffect(() => {
@@ -35,21 +51,19 @@ function Transactions({ selectedMonth }) {
       setIsMobile(mobile);
       if (mobile) setViewMode("cards"); // Force cards on mobile
     };
-    handleResize();
+    handleResize(); // Initial call to set correct state on mount
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Filter transactions by month/year
-  const monthFiltered = selectedMonth
-  ? transactions.filter((t) => {
+  const monthFiltered = selectedMonth ? transactions.filter((t) => {
       const d = new Date(t.date);
       return (
         d.getMonth() === selectedMonth.getMonth() &&
         d.getFullYear() === selectedMonth.getFullYear()
       );
-    })
-  : transactions;
+  }) : transactions;
 
   // Apply search filter on: note, source, category, type
   const filteredTransactions = monthFiltered.filter((t) => {
@@ -62,15 +76,37 @@ function Transactions({ selectedMonth }) {
     );
   });
 
-  // Pagination filtered results
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+  // Edit Handler
+  const handleEdit = (transaction) => {
+    const prefill = {
+      ...transaction,
+      date: new Date(transaction.date).toISOString().split("T")[0],
+      categoryId: transaction.categoryId.id || "",
+      id: transaction.id,
+    };
+    setEditPrefill(prefill);
+    console.log(prefill)
+    setEditModalOpen(true);
+  };
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedMonth]);
+  // Delete Handler
+  const handleDelete = (transaction) => {
+    setTransactionToDelete(transaction);
+    setDeleteDialogOpen(true);
+  };
+
+  // Delete function
+  const confirmDelete = async () => {
+    try {
+      await deleteProtectedData(`transactions/${transactionToDelete.id}`);
+      setDeleteDialogOpen(false);
+      setTransactionToDelete(null);
+      // Trigger refresh
+      setTransactions((prev) => prev.filter(t => t.id !== transactionToDelete.id));
+    } catch (err) {
+      console.error("Failed to delete transaction", err);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -95,33 +131,35 @@ function Transactions({ selectedMonth }) {
         </div>
       </div>
 
-      {/* Conditional rendering */}
+      {/* Conditional rendering: based on screen size */}
       {viewMode === "table" && !isMobile ? (
-        <DataTable columns={getColumns(editMode)} data={paginatedData} />
+        // Render DataTable (Table View)
+        <DataTable columns={getColumns(editMode, handleEdit, handleDelete)} data={filteredTransactions} loading={loading} />
       ) : (
-        <ViewCardList data={paginatedData} editMode={editMode} />
+        // Render ViewCardList
+        <ViewCardList data={filteredTransactions} editMode={editMode} loading={loading} 
+        handleEdit={handleEdit} handleDelete={handleDelete}/>
       )}
 
-      {/* Pagination controls */}
-      <div className="flex justify-center items-center gap-2 pt-4">
-        <Button variant="outline" size="sm" 
-          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} 
-          disabled={currentPage === 1}>
-          Prev
-        </Button>
-        {Array.from({ length: totalPages }, (_, i) => (
-          <Button key={i} size="sm" 
-            variant={currentPage === i + 1 ? "default" : "outline"} 
-            onClick={() => setCurrentPage(i + 1)}>
-            {i + 1}
-          </Button>
-        ))}
-        <Button variant="outline" size="sm" 
-          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} 
-          disabled={currentPage === totalPages}>
-          Next
-        </Button>
-      </div>
+      {/* Edit modal */}
+      <TransactionModal open={editModalOpen} onClose={() => setEditModalOpen(false)}
+        onCreated={() => setRefreshKey(k => k + 1)} prefill={editPrefill}/>
+
+      {/* Delete confirmation */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription className="text-base text-foreground">
+              Are you sure you want to delete this transaction?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
