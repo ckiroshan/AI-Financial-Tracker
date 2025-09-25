@@ -2,12 +2,23 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {TrendingUp, TrendingDown } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
 
-const BudgetSummary = ({ budgets }) => {
+const BudgetSummary = ({ budgets,loading }) => {
     const activeBudgets = budgets.filter(b => b.status === "active");
     const totalBudgeted = activeBudgets.reduce((sum, b) => sum + b.amount, 0);
     const totalSpent = activeBudgets.reduce((sum, b) => sum + b.spent, 0);
     const remainingBudget = totalBudgeted - totalSpent;
+
+    if (loading) {
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <Skeleton className="h-24 w-full rounded-lg" />
+                <Skeleton className="h-24 w-full rounded-lg" />
+                <Skeleton className="h-24 w-full rounded-lg" />
+            </div>
+        );
+    }
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

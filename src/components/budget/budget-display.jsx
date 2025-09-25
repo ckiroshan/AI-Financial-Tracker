@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import BudgetCard from "./budget-card";
 import { Plus } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
 
-const BudgetDisplay = ({filterStatus, searchQuery, budgets, onDelete }) => {
+const BudgetDisplay = ({filterStatus, searchQuery, budgets, onDelete,loading }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 3;
@@ -22,6 +23,16 @@ const BudgetDisplay = ({filterStatus, searchQuery, budgets, onDelete }) => {
   const totalPages = Math.ceil(filteredBudgets.length / cardsPerPage);
   const startIndex = (currentPage - 1) * cardsPerPage;
   const paginatedBudgets = filteredBudgets.slice(startIndex, startIndex + cardsPerPage);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Skeleton className="h-48 w-full rounded-lg" />   
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </div>
+    );
+  }
 
   return (
     <div>
