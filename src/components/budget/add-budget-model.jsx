@@ -136,7 +136,7 @@ export function AddBudgetModal({ isOpen, onClose, onAdd }) {
               <Label>Start Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="out" className="w-full justify-start text-left font-normal bg-transparent">
+                  <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.startDate ? format(formData.startDate, "MMM dd, yyyy") : "Pick a date"}
                   </Button>
