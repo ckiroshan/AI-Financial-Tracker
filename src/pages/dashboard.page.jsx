@@ -9,7 +9,6 @@ import { MonthYearPicker } from "@/components/transactions/month-year-picker.jsx
 const Dashboard = () => {
   // Lifted state: controls selected chart type
   const [selectedType, setSelectedType] = useState("expense"); // default is expense
-  const [selectedMonth, setSelectedMonth] = useState(new Date()); // default: date now
 
   return (
     <div className="rounded-lg mx-2 md:mx-20 lg:mx-30 my-2 py-4 lg:px-8">
@@ -26,18 +25,18 @@ const Dashboard = () => {
             <Download />
             Report
           </Button>
-          <MonthYearPicker selectedMonth={selectedMonth} onChange={setSelectedMonth} />
+          <MonthYearPicker />
         </div>
       </div>
 
       {/* Summary cards */}
-      <SummaryCard selectedMonth={selectedMonth} />
+      <SummaryCard />
 
       {/* Chart */}
-      <TransactionsChart selectedType={selectedType} setSelectedType={setSelectedType} selectedMonth={selectedMonth} />
+      <TransactionsChart selectedType={selectedType} setSelectedType={setSelectedType} />
 
       {/* Transactions List */}
-      <TransactionsList  selectedMonth={selectedMonth} selectedType={selectedType} />
+      <TransactionsList  selectedType={selectedType} />
     </div>
   );
 };

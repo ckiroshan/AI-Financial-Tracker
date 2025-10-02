@@ -45,17 +45,30 @@ export const getColumns = (editMode, onEdit, onDelete) => {
     },
     { // Transaction Amount
       accessorKey: "amount",
-      header: "Amount",
+      header: ({ column }) => (
+        <Button variant="ghost" className="font-semibold text-base" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Amount (Rs)
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       // format amount cell with currency & color
       cell: ({ row }) => {
         // text styling based on type
         const type = row.getValue("type");
         const amount = parseFloat(row.getValue("amount"));
-        return <span className={`font-semibold text-lg 
-          ${type === "income" 
-            ? "text-green-600" 
-            : "text-red-600"
-          }`}>Rs. {Math.ceil(amount).toLocaleString()}</span>;
+        
+        const formatted = amount.toLocaleString("en-US", { minimumFractionDigits: 2,    maximumFractionDigits: 2 });
+
+        return (
+          <span className={`text-lg text-right block w-[120px] font-semibold
+            ${type === "income" 
+              ? "text-green-600" 
+              : "text-red-600"
+            }`}>
+            {formatted}
+          </span>
+        );
       },
     },
     { // Transaction Note
@@ -88,11 +101,11 @@ export const getColumns = (editMode, onEdit, onDelete) => {
         return (
           <div className="flex gap-2">
              {/* Edit button */}
-            <Button className="bg-yellow-400 border-1 text-background border-yellow-500 hover:bg-yellow-500 size-8 w-17" onClick={() => onEdit(transaction)}>
+            <Button className="bg-yellow-400 border-1 text-background border-yellow-500 hover:bg-yellow-500 size-8 w-17" onClick={() => onEdit(transaction)} aria-label="Edit transaction">
               <SquarePen className="size-5" /> Edit
             </Button>
             {/* Delete button */}
-            <Button className="text-background bg-red-600 hover:bg-red-700 border-red-500 size-8 w-22" onClick={() => onDelete(transaction)}>
+            <Button className="text-background bg-red-600 hover:bg-red-700 border-red-500 size-8 w-22" onClick={() => onDelete(transaction)} aria-label="Delete transaction">
               <Trash2 className="size-5" /> Delete
             </Button>
           </div>

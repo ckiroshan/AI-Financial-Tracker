@@ -38,16 +38,16 @@ export default function CardViewList({ data, editMode, loading, handleEdit, hand
                {/* Top row: transaction type badge + amount */}
                <div className="flex justify-between items-center">
                  {/* Type badge: green for income, red for expense */}
-                 <span className={`text-sm font-bold text-background 
+                 <span className={`px-2 py-1 rounded-lg text-xs font-semibold text-background 
                    ${t.type === "income" 
-                   ? "text-green-500" 
-                   : "text-red-600"}`}>{t.type.charAt(0).toUpperCase() + t.type.slice(1).toLowerCase()}
+                   ? "bg-green-500" 
+                   : "bg-red-600"}`}>{t.type.charAt(0).toUpperCase() + t.type.slice(1).toLowerCase()}
                  </span>
                  {/* Amount: green if positive, red if negative */}
                  <span className={`font-bold 
                    ${t.type === "income" 
                    ? "text-green-600" 
-                   : "text-red-600"}`}>Rs. {Math.ceil(t.amount).toLocaleString()}
+                   : "text-red-600"}`}>Rs. {parseFloat(t.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                  </span>
                </div>
                 {/* Mid row: Transaction note/description */}
@@ -61,7 +61,7 @@ export default function CardViewList({ data, editMode, loading, handleEdit, hand
                 {editMode && (
                   <div className="flex gap-2 mt-2">
                     <Button
-                      className="text-background bg-yellow-400 hover:bg-yellow-500 size-8 w-16"
+                      className="text-background bg-yellow-400 hover:bg-yellow-500 size-8 w-16" aria-label="Edit transaction" 
                       onClick={() =>
                         handleEdit({
                           ...t,
@@ -73,8 +73,7 @@ export default function CardViewList({ data, editMode, loading, handleEdit, hand
                     >
                       <SquarePen  className="size-4" /> Edit
                     </Button>
-                    <Button className="text-background bg-red-600 hover:bg-red-700 size-8 w-21" 
-                    onClick={() => handleDelete(t)}>
+                    <Button className="text-background bg-red-600 hover:bg-red-700 size-8 w-21" aria-label="Delete transaction" onClick={() => handleDelete(t)}>
                       <Trash2 className="size-4" /> Delete
                     </Button>
                   </div>

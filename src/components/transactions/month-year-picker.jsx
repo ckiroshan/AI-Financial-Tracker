@@ -4,14 +4,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { useUIStore } from "@/stores/uiStore";
 
 // Date Component for selecting a month and year
-export function MonthYearPicker({ selectedMonth, onChange }) {
-  // selectedMonth: currently selected Date object (normalized to first of month)
-  // onChange: callback to update parent state with selected month
-
-  // Controls popover visibility
-  const [open, setOpen] = useState(false);
+export function MonthYearPicker() {
+  const { selectedMonth, setSelectedMonth } = useUIStore();
+  const [open, setOpen] = useState(false); // Controls popover visibility
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -35,7 +33,7 @@ export function MonthYearPicker({ selectedMonth, onChange }) {
             if (date) {
               // Normalize to first day of month
               const normalized = new Date(date.getFullYear(), date.getMonth(), 1);
-              onChange(normalized); // Update parent state
+              setSelectedMonth(normalized); // Update parent state
               setOpen(false);
             }
           }}

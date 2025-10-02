@@ -3,10 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useApi } from "@/api";
+import { useCreateTransactions, useUpdateTransaction } from "@/hooks/useTransactions";
+import { useCategories } from "@/hooks/useCategories";
 
 // Zod schema
 const transactionSchema = z.object({
@@ -24,10 +27,10 @@ const transactionSchema = z.object({
 });
 
 // Modal to add/update a transaction
-export default function TransactionModal({ open, onClose, onCreated, prefill }) {
-  const { postProtectedData, getProtectedData, putProtectedData } = useApi(); // Custom hook to fetch data
-  const [categories, setCategories] = useState([]); // manage list of categories
-  const [loadingCategories, setLoadingCategories] = useState(false); // manage loading state
+export default function TransactionModal({ open, onClose, prefill }) {
+  const createMutation = useCreateTransactions();
+  const updateMutation = useUpdateTransaction();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize React Hook Form
   const {
@@ -46,69 +49,51 @@ export default function TransactionModal({ open, onClose, onCreated, prefill }) 
   const selectedType = watch("type");
 
   // fetch categories based on selected transaction type
-  useEffect(() => {
-    if (!selectedType) return;
-    const fetchCategories = async () => {
-      setLoadingCategories(true);
-      try {
-        const data = await getProtectedData(`categories?type=${selectedType}`);
-        setCategories(data);
-      } catch (err) {
-        console.error("Failed to fetch categories", err);
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
-    fetchCategories();
-  }, [selectedType]);
+  const { data: categories = [], isLoading: loadingCategories } = useCategories(selectedType);
 
   // Reset form when modal closes
   useEffect(() => {
-    if (!open) return;
-
-    const prefillData = prefill ? { ...prefill } : {};
+    if (!open || !prefill) return;
+    const prefillData = { ...prefill };
+    // Normalize date
     if (prefillData.date) {
-      // Convert ISO datetime to YYYY-MM-DD
       prefillData.date = new Date(prefillData.date).toISOString().split("T")[0];
     }
-    prefillData.categoryId =
-      prefillData.categoryId && typeof prefillData.categoryId === "object"
-        ? prefillData.categoryId.id || ""
-        : prefillData.categoryId || "";
-    reset(prefillData);
-
-    if (prefillData.type) {
-      setLoadingCategories(true);
-      setTimeout(async () => {
-        try {
-          const categories = await getProtectedData(`categories?type=${prefillData.type}`);
-          setCategories(categories);
-          if (prefillData.categoryId) setValue("categoryId", prefillData.categoryId, { shouldValidate: true });
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setLoadingCategories(false);
-        }
-      }, 150);
+    // Normalize categoryId safely
+    if (prefillData.categoryId && typeof prefillData.categoryId === "object") {
+      prefillData.categoryId = prefillData.categoryId.id || "";
+    } else {
+      prefillData.categoryId = prefillData.categoryId || "";
     }
-  }, [open]);
+    // Reset form
+    reset(prefillData);
+    // Once categories are loaded, explicitly set categoryId again 
+    if (prefillData.categoryId && !loadingCategories) { 
+      setValue("categoryId", prefillData.categoryId, { shouldValidate: true }); 
+    }
+
+  }, [open, prefill, reset, setValue, loadingCategories, categories]);
 
   // Handle form submission
   const onSubmit = async (data) => {
     try {
+      setIsSubmitting(true); 
       if (prefill && prefill.id) {
         // Editing existing transaction
-        await putProtectedData(`transactions/${prefill.id}`, data);
+        await updateMutation.mutateAsync({ id: prefill.id, data });
       } else {
         // Creating new transaction
-        await postProtectedData("transactions", data);
+        await createMutation.mutateAsync(data);
       }
-      if (onCreated) onCreated(); // refresh list
-      onClose();
+      setIsSubmitting(false); 
+      setTimeout(onClose(), 3000);
     } catch (err) {
       console.error("Failed to create transaction", err);
+      setIsSubmitting(false); 
     }
   };
+
+  const isLoading = createMutation.isLoading || updateMutation.isLoading || isSubmitting;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -126,16 +111,19 @@ export default function TransactionModal({ open, onClose, onCreated, prefill }) 
           {/* Type */}
           <div>
             <label className="block text-sm font-medium mb-1">Type</label>
-            <div className="flex gap-4 text-sm">
-              <label className="flex items-center gap-2 ">
-                <input type="radio" value="income" {...register("type")} className="accent-green-500" />
-                Income
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="radio" value="expense" {...register("type")} className="accent-red-500" />
-                Expense
-              </label>
-            </div>
+            <RadioGroup className="flex gap-4 mt-2" value={watch("type")} 
+            onValueChange={(val) => setValue("type", val, { shouldValidate: true })}>
+              {/* Income Button */}
+              <div className="flex items-center gap-2">
+                <RadioGroupItem className="data-[state=checked]:bg-green-100 data-[state=checked]:border-green-500 border-4" value="income" id="income" />
+                <Label htmlFor="income" className="cursor-pointer">Income</Label>
+              </div>
+              {/* Expense Button */}
+              <div className="flex items-center gap-2">
+                <RadioGroupItem className="data-[state=checked]:bg-red-100 data-[state=checked]:border-red-500 border-4" value="expense" id="expense" />
+                <Label htmlFor="expense" className="cursor-pointer">Expense</Label>
+              </div>
+            </RadioGroup>
             {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
           </div>
 
@@ -190,7 +178,12 @@ export default function TransactionModal({ open, onClose, onCreated, prefill }) 
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Submit</Button>
+            <Button type="submit" disabled={isLoading}>
+              { prefill && prefill.id
+                ? isLoading ? "Updating..." : "Update"
+                : isLoading ? "Saving..." : "Submit"
+              }
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

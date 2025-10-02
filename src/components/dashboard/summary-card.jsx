@@ -1,44 +1,23 @@
 import { PieChart, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "../ui/card";
-import { useApi } from "@/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUIStore } from "@/stores/uiStore";
+import { useTransactionSummary } from "@/hooks/useTransactions";
 
 // SummaryCard component for financial stats
-const SummaryCard = ({ selectedMonth }) => {
-  const { getProtectedData } = useApi(); // Custom hook to handle API calls
-  const [summary, setSummary] = useState({ // State to store summary data
-    income: 0,
-    expense: 0,
-    balance: 0,
-    balanceRate: 0,
-  });
-  const [loading, setLoading] = useState(true); // Manage loading state
+const SummaryCard = () => {
+  const { selectedMonth } = useUIStore();
+  const month = selectedMonth.getMonth() + 1;
+  const year = selectedMonth.getFullYear();
 
-  // Fetch data
-  useEffect(() => {
-    const fetchSummary = async () => {
-      setLoading(true);
-      try {
-        const month = selectedMonth.getMonth() + 1;
-        const year = selectedMonth.getFullYear();
-        // Fetch summary data from the API endpoint
-        const data = await getProtectedData(`transactions/summary?month=${month}&year=${year}`);
-        setSummary(data);
-      } catch (err) {
-        console.error("Failed to fetch summary", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSummary();
-  }, [selectedMonth]); // Only triggered whenever selectedMonth changes
+  const { data: summary, isLoading } = useTransactionSummary(month, year);
+  const safeSummary = summary || { income: 0, expense: 0, balance: 0, balanceRate: 0 };
 
   // Array of objects (Cards)
   const cards = [
     {
       title: "Total Income",
-      value: `Rs ${summary.income.toLocaleString()}`,
+      value: `Rs ${safeSummary.income.toLocaleString()}`,
       icon: <TrendingUp className="w-5 h-5 lg:w-7 lg:h-7 text-white" />,
       bg: "bg-primary",
       text: "text-primary",
@@ -46,7 +25,7 @@ const SummaryCard = ({ selectedMonth }) => {
     },
     {
       title: "Total Expense",
-      value: `Rs ${summary.expense.toLocaleString()}`,
+      value: `Rs ${safeSummary.expense.toLocaleString()}`,
       icon: <TrendingDown className="w-5 h-5 lg:w-7 lg:h-7 text-white" />,
       bg: "bg-red-500",
       text: "text-red-500",
@@ -54,7 +33,7 @@ const SummaryCard = ({ selectedMonth }) => {
     },
     {
       title: "Balance",
-      value: `Rs ${summary.balance.toLocaleString()}`,
+      value: `Rs ${safeSummary.balance.toLocaleString()}`,
       icon: <Wallet className="w-5 h-5 lg:w-7 lg:h-7 text-white" />,
       bg: "bg-blue-500",
       text: "text-blue-700",
@@ -62,7 +41,7 @@ const SummaryCard = ({ selectedMonth }) => {
     },
     {
       title: "Savings Rate",
-      value: `${summary.balanceRate.toFixed(1)}%`,
+      value: `${safeSummary.balanceRate.toFixed(1)}%`,
       icon: <PieChart className="w-5 h-5 lg:w-7 lg:h-7 text-white" />,
       bg: "bg-purple-500",
       text: "text-purple-700",
@@ -77,7 +56,7 @@ const SummaryCard = ({ selectedMonth }) => {
     <div className="px-2 md:px-0 lg:py-0 pt-3 lg:mb-10">
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {/* Conditional rendering: if 'loading' true */}
-        {loading
+        {isLoading
           ? skeletonBorders.map((border, i) => (
               <Card key={i} className={`rounded-xl border ${border}`}>
                 <CardContent className="py-4 lg:py-15">

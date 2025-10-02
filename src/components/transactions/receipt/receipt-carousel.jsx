@@ -3,16 +3,17 @@ import ReceiptCard from "./receipt-card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, CheckCircle, FolderOpen, Inbox } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { useApi } from "@/api";
 import TransactionModal from "../action-buttons/transaction-modal";
 import AIReceiptModal from "../action-buttons/ai-receipt-modal";
 import { ReceiptCardSkeleton } from "./receipt-card-skeleton";
+import { useReceipts } from "@/hooks/useReceipts";
 
 // Displays a carousel of receipts
-export default function ReceiptsCarousel({ refreshKey }) {
-  const { getProtectedData, deleteProtectedData } = useApi(); // Custom hook to handle API calls
-  const [receipts, setReceipts] = useState([]); // Store receipts
-  const [loading, setLoading] = useState(true); // Manage loading state
+export default function ReceiptsCarousel() {
+  const { data: receipts = [], isLoading, deleteReceipt } = useReceipts();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Local UI state
   const [filter, setFilter] = useState("all"); // Filter receipts
   const [currentIndex, setCurrentIndex] = useState(0); // Carousel: current index
   const [itemsPerView, setItemsPerView] = useState(1); // Carousel: items count
@@ -28,66 +29,17 @@ export default function ReceiptsCarousel({ refreshKey }) {
   // State: check if there are no receipts
   const hasNoReceipts = receipts.length === 0;
 
-  // function: Fetch receipts from backend
-  const fetchReceipts = async () => {
-    setLoading(true);
-    try {
-      const data = await getProtectedData("receipts");
-      setReceipts(data);
-    } catch (err) {
-      console.error("Failed to fetch receipts", err);
-    } finally {
-      await new Promise(r => setTimeout(r, 2000));
-      setLoading(false);
-    }
-  };
-
-  // Trigger fetchReceipts
-  useEffect(() => {
-    fetchReceipts();
-  }, [refreshKey]);
-
-  // Delete Receipt Handler
-  const handleDelete = (receipt) => {
-    setReceiptToDelete(receipt);
-    console.log(receiptToDelete)
-    setDeleteDialogOpen(true);
-  };
-
-  // Confirm deletion handler
-  const confirmDelete = async () => {
-    try {
-      // console.log(receiptToDelete.id)
-      await deleteProtectedData(`receipts/${receiptToDelete.id}`);
-      setDeleteDialogOpen(false);
-      setReceiptToDelete(null);
-      setReceipts((prev) => prev.filter(r => r.id !== receiptToDelete.id)); // Refresh list
-    } catch (err) {
-      console.error("Failed to delete receipt", err);
-    }
-  };
-
-  // Process receipt → open transaction modal
-  const handleProcess = (receipt) => {
-    // Set state with pre-filled transaction data from receipt
-    setPrefillFromReceipt({
-      type: receipt.draftTransaction.type,
-      amount: receipt.amountDetected || "",
-      note: receipt.context || "",
-      date: new Date().toISOString().split("T")[0],
-      source: receipt.merchantName || "",
-      categoryId: "",
-      receiptId: receipt.id
-    });
-    setTransactionModalOpen(true);
-  };
-
   // Filter receipts
   const filteredReceipts = receipts.filter((receipt) => {
     if (filter === "processed") return receipt.isProcessed;
     if (filter === "unprocessed") return !receipt.isProcessed;
     return true;
   });
+
+  // Reset index when filter changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [filter, itemsPerView]);
 
   // Dynamically calculate items per view (Carousel sizing)
   useEffect(() => {
@@ -106,6 +58,43 @@ export default function ReceiptsCarousel({ refreshKey }) {
     // Disconnect observer when component unmounts
     return () => observer.disconnect();
   }, []);
+  
+  // Delete Receipt Handler
+  const handleDelete = (receipt) => {
+    setReceiptToDelete(receipt);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm deletion handler
+  const confirmDelete = async () => {
+    if (!receiptToDelete) return;
+    try {
+      setIsSubmitting(true);
+      await deleteReceipt.mutateAsync(receiptToDelete.id);
+      setDeleteDialogOpen(false);
+      setReceiptToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete receipt", err);
+    } finally {
+      setIsSubmitting(false); // stop local loading
+    }
+  };
+
+  // Process receipt → open transaction modal
+  const handleProcess = (receipt) => {
+    if (!receipt.draftTransaction) return;
+    // Set state with pre-filled transaction data from receipt
+    setPrefillFromReceipt({
+      type: receipt.draftTransaction.type,
+      amount: receipt.amountDetected || "",
+      note: receipt.context || "",
+      date: new Date().toISOString().split("T")[0],
+      source: receipt.merchantName || "",
+      categoryId: "",
+      receiptId: receipt.id
+    });
+    setTransactionModalOpen(true);
+  };
 
   const maxIndex = Math.max(0, filteredReceipts.length - itemsPerView); // Maximum scroll index
   // Carousel navigation functions
@@ -130,21 +119,17 @@ export default function ReceiptsCarousel({ refreshKey }) {
       {/* Carousel */}
       <div className="relative flex items-center" ref={containerRef}>
         {/* Left arrow */}
-        <Button variant="outline" size="icon" className="z-10 mr-1 md:mr-2" onClick={prev} disabled={currentIndex === 0}>
+        <Button variant="outline" size="icon" className="z-10 mr-1 md:mr-2" onClick={prev} disabled={currentIndex === 0} aria-label="Previous receipts">
           <ChevronLeft strokeWidth={1.8} className="text-green-600 size-5 md:size-7" />
         </Button>
 
         {/* Cards or Empty Message */}
         <div className="overflow-hidden flex-1">
-          {loading ? (
+          {isLoading ? (
             // Show skeletons while fetching
             <div className="flex -mx-2">
               {Array.from({ length: itemsPerView }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-shrink-0 px-2"
-                  style={{ flex: `0 0 ${100 / itemsPerView}%` }}
-                >
+                <div key={i} className="flex-shrink-0 px-2" style={{ flex: `0 0 ${100 / itemsPerView}%` }}>
                   <ReceiptCardSkeleton />
                 </div>
               ))}
@@ -198,7 +183,7 @@ export default function ReceiptsCarousel({ refreshKey }) {
         </div>
 
         {/* Right arrow */}
-        <Button variant="outline" size="icon" className="z-10 ml-1 md:ml-2" onClick={next} disabled={currentIndex === maxIndex}>
+        <Button variant="outline" size="icon" className="z-10 ml-1 md:ml-2" onClick={next} disabled={currentIndex === maxIndex} aria-label="Next receipts">
           <ChevronRight strokeWidth={1.8} className="text-green-600 size-5 md:size-7" />
         </Button>
       </div>
@@ -213,26 +198,19 @@ export default function ReceiptsCarousel({ refreshKey }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSubmitting}>
+              {isSubmitting ? "Deleting..." : "Delete"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* AI Receipt modal */}
-      <AIReceiptModal open={aiReceiptModalOpen} onClose={() => setAiReceiptModalOpen(false)}
-        onCreated={() => {
-          setAiReceiptModalOpen(false);
-          fetchReceipts(); // refresh after receipt is created
-        }}
-      />
+      <AIReceiptModal open={aiReceiptModalOpen} onClose={() => setAiReceiptModalOpen(false)} />
       {/* Transaction modal */}
       <TransactionModal open={transactionModalOpen} onClose={() => setTransactionModalOpen(false)} 
-      prefill={prefillFromReceipt} onCreated={() => {
-          setTransactionModalOpen(false);
-          fetchReceipts(); // refresh after backend marks processed
-        }}
-      />
+      prefill={prefillFromReceipt} />
     </div>
   );
 }
