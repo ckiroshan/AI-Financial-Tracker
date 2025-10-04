@@ -1,78 +1,66 @@
-"use client";
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Edit, Trash2, Calendar } from "lucide-react";
+import { Trash2, Calendar, SquarePen } from "lucide-react";
 
-const BudgetCard = ({ budget, onDelete }) => {
-  const spentPercentage = (budget.spent / budget.amount) * 100;
-  const remaining = budget.amount - budget.spent;
-  const isOverBudget = budget.spent > budget.amount;
+const BudgetCard = ({ budget, onEdit, onDelete }) => {
+  const { id, name, limitAmount, remainingAmount, spendingPercentage, isActive, startDate, endDate, category } = budget;
+  const isOverBudget = remainingAmount < 0;
+  const spent = limitAmount - remainingAmount;
 
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg text-balance">{budget.name}</CardTitle>
+            <CardTitle className="font-semibold md:text-lg">{name}</CardTitle>
           </div>
-          <Badge
-            variant={budget.status === "active" ? "default" : "secondary"}
-            className={budget.status === "active" ? "bg-green-600 hover:bg-green-700" : ""}
-          >
-            {budget.status}
+          <Badge variant="default"
+            className={isActive ? "bg-primary " : "bg-red-600"}>
+            {isActive ? "Active" : "Budget Reached"}
           </Badge>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Spent</span>
-            <span className="font-medium">
-              RS. {budget.spent.toLocaleString()} / RS.{budget.amount.toLocaleString()}
-            </span>
+        {/* Spent vs Limit */}
+        <div className="space-y-2 font-medium">
+          <div className="flex justify-between">
+            <span className="text-red-600">Spent</span>
+            <span>{spent.toLocaleString()} / {limitAmount.toLocaleString()}</span>
           </div>
-          <Progress value={Math.min(spentPercentage, 100)} className="h-2 [&>div]:bg-green-600" />
-          <div className="flex justify-between text-xs">
-            <span className={`font-medium ${isOverBudget ? "text-destructive" : "text-green-600"}`}>
-              {isOverBudget ? "Over budget" : "Remaining"}: RS. {Math.abs(remaining).toLocaleString()}
+          <Progress value={Math.min(spendingPercentage, 100)} className="h-2 [&>div]:bg-red-600 bg-gray-200" />
+          <div className="flex justify-between">
+            <span className={`${isOverBudget ? "text-destructive" : "text-foreground"}`}>
+              {isOverBudget ? "Over budget" : "Remaining"}: {Math.abs(remainingAmount).toLocaleString()}
             </span>
-            <span className="text-muted-foreground">{spentPercentage.toFixed(1)}%</span>
+            <span className="text-muted-foreground">{(spendingPercentage).toFixed(1)}%</span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        {/* Date Range */}
+        <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             <span>
-              {new Date(budget.startDate).toLocaleDateString()} - {new Date(budget.endDate).toLocaleDateString()}
+              {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
             </span>
           </div>
         </div>
 
-        <Badge variant="outline" className="w-fit border-green-600 text-green-600">
-          {budget.category}
+        {/* Category */}
+        <Badge variant="outline" className="w-fit px-3 bg-blue-400 text-background text-sm">
+          {category?.name}
         </Badge>
 
+        {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 bg-transparent border-yellow-600 text-yellow-600 hover:bg-green-50"
-          >
-            <Edit className="w-3 h-3 mr-1" />
-            Edit
+          <Button onClick={onEdit} className="text-background bg-yellow-400 hover:bg-yellow-500 size-8 w-16">
+            <SquarePen className="size-4" /> Edit
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(budget.id)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="w-3 h-3" />
+          <Button variant="destructive" onClick={() => onDelete(budget)} className="size-8 w-23 text-background">
+            <Trash2 className="size-5" /> Delete
           </Button>
         </div>
       </CardContent>

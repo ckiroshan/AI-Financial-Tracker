@@ -7,7 +7,7 @@ import CategoryModal from "./category-modal";
 import { useState } from "react";
 
 // Buttons component to trigger various modals
-export default function ActionButtons({ onCreated }) {
+export default function ActionButtons() {
   const [aiModalOpen, setAiModalOpen] = useState(false); // manage AI Receipt Modal visibility
   const [transactionModalOpen, setTransactionModalOpen] = useState(false); // manage Transaction Modal visibility
   const [categoryModalOpen, setCategoryModalOpen] = useState(false); // manage Category Modal visibility
@@ -56,9 +56,9 @@ export default function ActionButtons({ onCreated }) {
       </TooltipProvider>
 
       {/* Modals */}
-      <AIReceiptModal open={aiModalOpen} onClose={() => setAiModalOpen(false)} onCreated={onCreated} />
-      <TransactionModal open={transactionModalOpen} onClose={() => setTransactionModalOpen(false)} onCreated={onCreated} />
-      <CategoryModal open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} onCreated={onCreated} />
+      <AIReceiptModal open={aiModalOpen} onClose={() => setAiModalOpen(false)} />
+      <TransactionModal open={transactionModalOpen} onClose={() => setTransactionModalOpen(false)} />
+      <CategoryModal open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} />
     </>
   );
 }

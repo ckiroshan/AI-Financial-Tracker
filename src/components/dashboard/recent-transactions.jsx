@@ -1,49 +1,29 @@
-import { useApi } from "@/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useUIStore } from "@/stores/uiStore";
 import { format } from "date-fns";
-import { useEffect, useState } from "react";
 
 // Shows a list of recent transactions
-const TransactionsList = ({ selectedType, selectedMonth }) => {
-  const { getProtectedData } = useApi(); // Custom hook to handle API calls
-  const [transactions, setTransactions] = useState([]); // Store fetched transactions
-  const [loading, setLoading] = useState(true); // Manage loading state
-
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      setLoading(true);
-      try {
-        // Extract month, year from Date object.
-        const month = selectedMonth.getMonth() + 1;
-        const year = selectedMonth.getFullYear();
-        // Fetch transactions data from the API endpoint
-        const data = await getProtectedData(`transactions?month=${month}&year=${year}&type=${selectedType}`);
-        setTransactions(data);
-        console.log(data)
-      } catch (err) {
-        console.error("Failed to fetch transactions", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, [selectedType, selectedMonth]); // Only triggered when selectedType or selectedMonth changes
+const TransactionsList = ({ selectedType }) => {
+  const { selectedMonth } = useUIStore();
+  const month = selectedMonth.getMonth() + 1;
+  const year = selectedMonth.getFullYear();
+  const { data: transactions = [], isLoading } = useTransactions(month, year); // Fetch transactions with React Query
   
-  const filteredTransactions = transactions.slice(-6).reverse();
+  const filteredTransactions = transactions.filter((t) => t.type === selectedType).slice(-6).reverse();
 
   return (
     <Card className="w-full mx-auto mt-10 bg-white border border-gray-200">
       <CardHeader>
         {/* Set title based on selected type */}
         <CardTitle className="text-xl font-bold text-gray-800"> 
-          Recent {selectedType === "expense" ? "Expenses" : "Income"}
+          Recent {selectedType === "expense" ? "Expenses" : "Income"} (Rs)
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {/* Conditionally render: if 'loading' true */}
-        {loading ? (
+        {isLoading  ? (
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex flex-col space-y-1">
@@ -60,14 +40,14 @@ const TransactionsList = ({ selectedType, selectedMonth }) => {
           // Conditionally render: if 'loading' false & transactions found
           filteredTransactions.map((t) => (
             <div key={t.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="flex flex-col">
-                <p className="font-medium text-gray-900">{t.note}</p> 
+              <div className="flex flex-col min-w-0">
+                <p className="font-medium text-gray-900 max-w-[520px] md:max-w-[230px] lg:max-w-[250px]" title={t.note}>{t.note}</p> 
                 <span className="text-xs text-gray-500">{format(t.date, "dd/MM")}</span>
               </div>
               <div>
                 <span className={`font-semibold 
                   ${t.type === "income" ? "text-green-600" : "text-red-600"}`}>
-                  Rs. {t.type === "income" ? "+" : "-"}{Math.ceil(t.amount).toLocaleString()}
+                  {parseFloat(t.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

@@ -1,184 +1,147 @@
-"use client";
-
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useCategories } from "@/hooks/useCategories";
 
-const categories = [
-  "Food & Dining",
-  "Transportation",
-  "Entertainment",
-  "Shopping",
-  "Home",
-  "Health & Fitness",
-  "Travel",
-  "Education",
-  "Bills & Utilities",
-  "Other",
-];
+export const budgetSchema = z.object({
+  name: z.string(
+    { required_error: "Name is required" }).min(1, "Name is required"),
+  amount: z.coerce.number({
+    required_error: "Amount is required",
+    invalid_type_error: "Amount must be a number",
+  }).positive("Amount must be greater than 0"),
+  category: z.string({ required_error: "Category is required" }).min(1, "Category is required"),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().min(1, "End date is required"),
+});
 
-export function AddBudgetModal({ isOpen, onClose, onAdd }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    category: "",
-    startDate: undefined,
-    endDate: undefined,
+export function AddBudgetModal({ isOpen, onClose, initialData, onSubmit }) {
+  const isEditMode = !!initialData;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: categories = [], isLoading: loadingCategories } = useCategories("expense");
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors },
+  } = useForm({
+    resolver: zodResolver(budgetSchema),
+    defaultValues: { name: "", amount: "", category: "", startDate: "", endDate: "" },
   });
+  const categoryValue = watch("category");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.amount || !formData.category || !formData.startDate || !formData.endDate) {
-      return;
+  // Prefill when editing
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        reset({
+          name: initialData.name || "",
+          amount: initialData.limitAmount || "",
+          category: initialData.category?.id || "", // use id
+          startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split("T")[0] : "",
+          endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split("T")[0] : "",
+        });
+      } else {
+        reset({ name: "", amount: "", category: "", startDate: "", endDate: "" });
+      }
+    } else {
+      // Clear form when closing
+      reset({ name: "", amount: "", category: "", startDate: "", endDate: "" });
     }
+  }, [isOpen, initialData, reset]);
 
-    onAdd({
-      name: formData.name,
-      amount: Number.parseFloat(formData.amount),
-      category: formData.category,
-      startDate: formData.startDate.toISOString().split("T")[0],
-      endDate: formData.endDate.toISOString().split("T")[0],
-    });
+  const onSubmitForm = async (data) => {
+    const payload = {
+      id: initialData?.id,
+      name: data.name,
+      limitAmount: Number(data.amount),
+      categoryId: data.category,
+      startDate: new Date(data.startDate).toISOString(),
+      endDate: new Date(data.endDate).toISOString(),
+      isActive: true,
+    };
 
-    setFormData({
-      name: "",
-      amount: "",
-      category: "",
-      startDate: undefined,
-      endDate: undefined,
-    });
-
-    onClose();
-  };
-
-  const handleClose = () => {
-    setFormData({
-      name: "",
-      amount: "",
-      category: "",
-      startDate: undefined,
-      endDate: undefined,
-    });
-    onClose();
+    try {
+      setIsSubmitting(true);
+      await onSubmit(payload); 
+      onClose();
+    } catch (err) {
+      console.error("Failed to save budget", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add New Budget</DialogTitle>
-          <DialogDescription>Create a new budget to track your spending in a specific category.</DialogDescription>
+          <DialogTitle className="text-center">{isEditMode ? "Edit Budget" : "Add New Budget"}</DialogTitle>
+          <DialogDescription className="text-center">
+            {isEditMode
+              ? "Update your budget details below."
+              : "Create a new budget to track your spending in a specific category."}
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+          {/* Budget Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Budget Name</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Monthly Groceries"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
+            <Input id="name" placeholder="e.g., Monthly Groceries" {...register("name")} />
+            {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
           </div>
-
+          
+          {/* Amount + Category */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="amount">Budget Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="0.00"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                required
-              />
+              <Input id="amount" type="number" placeholder="0.00" {...register("amount")} />
+              {errors.amount && <p className="text-red-500 text-xs">{errors.amount.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
+              <Select value={categoryValue} onValueChange={(value) => setValue("category", value, { shouldValidate: true })} disabled={loadingCategories}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={loadingCategories ? "Loading..." : "Select category"} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
             </div>
           </div>
-
+          
+          {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="out" className="w-full justify-start text-left font-normal bg-transparent">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.startDate ? format(formData.startDate, "MMM dd, yyyy") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.startDate}
-                    onSelect={(date) => setFormData({ ...formData, startDate: date })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input type="date" {...register("startDate")} />
+              {errors.startDate && <p className="text-red-500 text-xs">{errors.startDate.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.endDate ? format(formData.endDate, "MMM dd, yyyy") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.endDate}
-                    onSelect={(date) => setFormData({ ...formData, endDate: date })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+               <Input type="date" {...register("endDate")} />
+              {errors.endDate && <p className="text-red-500 text-xs">{errors.endDate.message}</p>}
             </div>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" className="bg-primary hover:bg-primary/90">
-              Create Budget
+              { isEditMode ? isSubmitting ? "Saving..." : "Save Changes" : isSubmitting ? "Creating..." : "Create Budget"}
             </Button>
           </DialogFooter>
         </form>
