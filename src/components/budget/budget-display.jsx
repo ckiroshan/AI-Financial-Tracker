@@ -4,8 +4,12 @@ import BudgetCard from "./budget-card";
 import { PlusCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AddBudgetModal } from "./add-budget-model";
+import { useUIStore } from "@/stores/uiStore";
+import { useCreateBudget, useDeleteBudget, useUpdateBudget } from "@/hooks/useBudgets";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const BudgetDisplay = ({ filterStatus, searchQuery, budgets, setBudgets, onDelete, isAddModalOpen, setIsAddModalOpen }) => {
+const BudgetDisplay = ({ budgets, isLoading }) => {
   const [pageIndex, setPageIndex] = useState(0);
   const pageSize = 3; // how many cards per page
 
@@ -15,14 +19,39 @@ const BudgetDisplay = ({ filterStatus, searchQuery, budgets, setBudgets, onDelet
   const [budgetToDelete, setBudgetToDelete] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Apply filters based on filterStatus and searchQuery
-  const filteredBudgets = budgets.filter((budget) => {
-    // status is now a boolean (isActive)
-    const matchesStatus = filterStatus === "all" || (filterStatus === "active" && budget.isActive) || (filterStatus === "completed" && !budget.isActive);
+  // Global filters
+  const { selectedMonth } = useUIStore();
+  const { filterStatus, searchQuery, isAddModalOpen, setIsAddModalOpen } = useBudgetUIStore();
 
-    // category is now an object
+  // React Query hooks
+  const createBudget = useCreateBudget();
+  const updateBudget = useUpdateBudget();
+  const deleteBudget = useDeleteBudget();
+
+  // Apply filters
+  const filteredBudgets = (budgets || []).filter((budget) => {
+    // Month filter
+    if (selectedMonth) {
+      const start = new Date(budget.startDate);
+      if (
+        start.getFullYear() !== selectedMonth.getFullYear() ||
+        start.getMonth() !== selectedMonth.getMonth()
+      ) {
+        return false;
+      }
+    }
+
+    // Status filter
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "active" && budget.isActive) ||
+      (filterStatus === "completed" && !budget.isActive);
+
+    // Search filter
     const categoryName = budget.category?.name?.toLowerCase() || "";
-    const matchesSearch = budget.name.toLowerCase().includes(searchQuery.toLowerCase()) || categoryName.includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      budget.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      categoryName.includes(searchQuery.toLowerCase());
 
     return matchesStatus && matchesSearch;
   });
@@ -31,6 +60,21 @@ const BudgetDisplay = ({ filterStatus, searchQuery, budgets, setBudgets, onDelet
   const start = pageIndex * pageSize;
   const end = start + pageSize;
   const paginatedBudgets = filteredBudgets.slice(start, end);
+
+  // Handle create/update
+  const handleSubmit = async (payload) => {
+    try {
+      if (payload.id) {
+        await updateBudget.mutateAsync(payload);
+      } else {
+        await createBudget.mutateAsync(payload);
+      }
+      setIsAddModalOpen(false);
+      setEditBudget(null);
+    } catch (err) {
+      console.error("Failed to save budget", err);
+    }
+  };
 
   // Trigger delete dialog
   const handleDelete = (budget) => {
@@ -43,7 +87,7 @@ const BudgetDisplay = ({ filterStatus, searchQuery, budgets, setBudgets, onDelet
     if (!budgetToDelete) return;
     try {
       setIsSubmitting(true);
-      await onDelete(budgetToDelete.id); // call parent delete
+      await deleteBudget.mutateAsync(budgetToDelete.id);
       setDeleteDialogOpen(false);
       setBudgetToDelete(null);
     } catch (err) {
@@ -57,13 +101,24 @@ const BudgetDisplay = ({ filterStatus, searchQuery, budgets, setBudgets, onDelet
     <>
       <div className="space 6 mt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedBudgets.map((budget) => (
-            <BudgetCard key={budget.id} budget={budget} onDelete={() => handleDelete(budget)} onEdit={() => setEditBudget(budget)} />
-          ))}
+          {isLoading
+            ? 
+              Array.from({ length: pageSize }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-gray-200 p-4 space-y-4">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-32 w-full" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                </div>
+              ))
+            : paginatedBudgets.map((budget) => <BudgetCard key={budget.id} budget={budget} onDelete={() => handleDelete(budget)} onEdit={() => setEditBudget(budget)} />)}
         </div>
 
         {/* Pagination controls */}
-        {totalPages > 1 && (
+        {!isLoading && totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 pt-6">
             {/* Prev */}
             <Button variant="outline" size="sm" onClick={() => setPageIndex((p) => Math.max(p - 1, 0))} 
@@ -89,7 +144,7 @@ const BudgetDisplay = ({ filterStatus, searchQuery, budgets, setBudgets, onDelet
       </div>
 
       {/* Empty state */}
-      {filteredBudgets.length === 0 && (
+      {!isLoading && filteredBudgets.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-600">Couldn't find any budgets yet.</p>
           <Button onClick={() => setIsAddModalOpen(true)} title="Add Budget" className="mt-4">
@@ -124,16 +179,8 @@ const BudgetDisplay = ({ filterStatus, searchQuery, budgets, setBudgets, onDelet
           setIsAddModalOpen(false);
           setEditBudget(null);
         }}
-        onSubmit={(budget) => {
-          if (budget.id) {
-            // update existing
-            setBudgets((prev) => prev.map((b) => (b.id === budget.id ? budget : b)));
-          } else {
-            // add new
-            setBudgets((prev) => [...prev, { ...budget, id: Date.now().toString() }]);
-          }
-        }}
         initialData={editBudget}
+        onSubmit={handleSubmit}
       />
     </>
   );

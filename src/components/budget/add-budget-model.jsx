@@ -4,77 +4,79 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useCategories } from "@/hooks/useCategories";
 
-const categories = ["Food & Dining", "Transportation", "Entertainment", "Shopping", "Home", "Health & Fitness", "Travel", "Education", "Bills & Utilities", "Other"];
+export const budgetSchema = z.object({
+  name: z.string(
+    { required_error: "Name is required" }).min(1, "Name is required"),
+  amount: z.coerce.number({
+    required_error: "Amount is required",
+    invalid_type_error: "Amount must be a number",
+  }).positive("Amount must be greater than 0"),
+  category: z.string({ required_error: "Category is required" }).min(1, "Category is required"),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().min(1, "End date is required"),
+});
 
-export function AddBudgetModal({ isOpen, onClose, onSubmit, initialData }) {
-  console.log("Modal props:", { isOpen, onClose, onSubmit, initialData });
-
+export function AddBudgetModal({ isOpen, onClose, initialData, onSubmit }) {
   const isEditMode = !!initialData;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    category: "",
-    startDate: "",
-    endDate: "",
+  const { data: categories = [], isLoading: loadingCategories } = useCategories("expense");
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors },
+  } = useForm({
+    resolver: zodResolver(budgetSchema),
+    defaultValues: { name: "", amount: "", category: "", startDate: "", endDate: "" },
   });
+  const categoryValue = watch("category");
 
   // Prefill when editing
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || "",
-        amount: initialData.limitAmount || "",
-        category: initialData.category?.name || "",
-        startDate: initialData.startDate
-          ? new Date(initialData.startDate).toISOString().split("T")[0]
-          : "",
-        endDate: initialData.endDate
-          ? new Date(initialData.endDate).toISOString().split("T")[0]
-          : "",
-      });
+    if (isOpen) {
+      if (initialData) {
+        reset({
+          name: initialData.name || "",
+          amount: initialData.limitAmount || "",
+          category: initialData.category?.id || "", // use id
+          startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split("T")[0] : "",
+          endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split("T")[0] : "",
+        });
+      } else {
+        reset({ name: "", amount: "", category: "", startDate: "", endDate: "" });
+      }
     } else {
-      setFormData({
-        name: "",
-        amount: "",
-        category: "",
-        startDate: "",
-        endDate: "",
-      });
+      // Clear form when closing
+      reset({ name: "", amount: "", category: "", startDate: "", endDate: "" });
     }
-  }, [initialData]);
+  }, [isOpen, initialData, reset]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (
-      !formData.name ||
-      !formData.amount ||
-      !formData.category ||
-      !formData.startDate ||
-      !formData.endDate
-    ) {
-      return;
-    }
-
-    onSubmit({
-      id: initialData?.id, // preserve id if editing
-      name: formData.name,
-      limitAmount: Number.parseFloat(formData.amount),
-      category: { name: formData.category, type: "expense" },
-      startDate: new Date(formData.startDate).toISOString(),
-      endDate: new Date(formData.endDate).toISOString(),
+  const onSubmitForm = async (data) => {
+    const payload = {
+      id: initialData?.id,
+      name: data.name,
+      limitAmount: Number(data.amount),
+      categoryId: data.category,
+      startDate: new Date(data.startDate).toISOString(),
+      endDate: new Date(data.endDate).toISOString(),
       isActive: true,
-    });
-    onClose();
-  };
+    };
 
-  const handleClose = () => {
-    onClose();
+    try {
+      setIsSubmitting(true);
+      await onSubmit(payload); 
+      onClose();
+    } catch (err) {
+      console.error("Failed to save budget", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-center">{isEditMode ? "Edit Budget" : "Add New Budget"}</DialogTitle>
@@ -85,53 +87,61 @@ export function AddBudgetModal({ isOpen, onClose, onSubmit, initialData }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+          {/* Budget Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Budget Name</Label>
-            <Input id="name" placeholder="e.g., Monthly Groceries" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+            <Input id="name" placeholder="e.g., Monthly Groceries" {...register("name")} />
+            {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
           </div>
-
+          
+          {/* Amount + Category */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="amount">Budget Amount</Label>
-              <Input id="amount" type="number" placeholder="0.00" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
+              <Input id="amount" type="number" placeholder="0.00" {...register("amount")} />
+              {errors.amount && <p className="text-red-500 text-xs">{errors.amount.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+              <Select value={categoryValue} onValueChange={(value) => setValue("category", value, { shouldValidate: true })} disabled={loadingCategories}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={loadingCategories ? "Loading..." : "Select category"} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {errors.category && <p className="text-red-500 text-xs">{errors.category.message}</p>}
             </div>
           </div>
-
+          
+          {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Start Date</Label>
-              <Input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required />
+              <Input type="date" {...register("startDate")} />
+              {errors.startDate && <p className="text-red-500 text-xs">{errors.startDate.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label>End Date</Label>
-              <Input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} required />
+               <Input type="date" {...register("endDate")} />
+              {errors.endDate && <p className="text-red-500 text-xs">{errors.endDate.message}</p>}
             </div>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" className="bg-primary hover:bg-primary/90">
-              {isEditMode ? "Save Changes" : "Create Budget"}
+              { isEditMode ? isSubmitting ? "Saving..." : "Save Changes" : isSubmitting ? "Creating..." : "Create Budget"}
             </Button>
           </DialogFooter>
         </form>

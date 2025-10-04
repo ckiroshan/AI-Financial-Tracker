@@ -1,9 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Wallet, Landmark } from "lucide-react";
+import { useUIStore } from "@/stores/uiStore";
+import { TrendingUp, TrendingDown, Landmark } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const BudgetSummary = ({ budgets }) => {
-  // Only active budgets
-  const activeBudgets = budgets.filter((b) => b.isActive);
+const BudgetSummary = ({ budgets, isLoading }) => {
+  const { selectedMonth } = useUIStore();
+
+  // Filter by selected month if set
+  const monthFiltered = (budgets || []).filter((b) => {
+    if (!selectedMonth) return true;
+    const start = new Date(b.startDate);
+    return (
+      start.getFullYear() === selectedMonth.getFullYear() &&
+      start.getMonth() === selectedMonth.getMonth()
+    );
+  });
+
+  const activeBudgets = monthFiltered.filter((b) => b.isActive);
 
   // Totals based on backend fields
   const totalBudgeted = activeBudgets.reduce((sum, b) => sum + b.limitAmount, 0);
@@ -41,22 +54,34 @@ const BudgetSummary = ({ budgets }) => {
   ];
 
   return (
-    <div className="px-0 lg:py-0 pt-3 lg:mb-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {cards.map((card, i) => (
-          <Card key={i} className={`rounded-xl border ${card.border}`}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 lg:pb-2">
-              <CardTitle className="text-base lg:text-xl font-normal">{card.title}</CardTitle>
-              <span className={`w-8 h-8 lg:w-9 lg:h-9 ${card.bg} rounded-md flex items-center justify-center`}>{card.icon}</span>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-lg md:text-xl lg:text-2xl font-bold ${card.text}`}>{card.value}</div>
-              <p className="text-sm text-gray-500">{card.subtitle}</p>
-            </CardContent>
-          </Card>
-        ))}
+    <>
+      <p className="text-base lg:text-lg text-center mb-1 lg:mb-4">Summary of your current Budget Stats (Rs)</p>
+      <div className="px-0 lg:py-0 pt-3 lg:mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {cards.map((card, i) => (
+            <Card key={i} className={`rounded-xl border ${card.border}`}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 lg:pb-2">
+                <CardTitle className="text-base lg:text-xl font-normal">{card.title}</CardTitle>
+                <span className={`w-8 h-8 lg:w-9 lg:h-9 ${card.bg} rounded-md flex items-center justify-center`}>{card.icon}</span>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <>
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-50" />
+                  </>
+                ) : (
+                  <>
+                    <div className={`text-lg md:text-xl lg:text-2xl font-bold ${card.text}`}>{card.value}</div>
+                    <p className="text-sm text-gray-500">{card.subtitle}</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

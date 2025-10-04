@@ -35,7 +35,7 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
             <span className={`${isOverBudget ? "text-destructive" : "text-foreground"}`}>
               {isOverBudget ? "Over budget" : "Remaining"}: {Math.abs(remainingAmount).toLocaleString()}
             </span>
-            <span className="text-muted-foreground">{(spendingPercentage * 100).toFixed(1)}%</span>
+            <span className="text-muted-foreground">{(spendingPercentage).toFixed(1)}%</span>
           </div>
         </div>
 
